@@ -25,7 +25,7 @@ Any planned functions can be added to these files as is seen fit
 * Controller.py
   - Based off of the current Controller.py
   - Conducts the serial communications, and contains the base functionality for all of the various protocol commands related to the controller
-  - Communicates with the arduino, as well as ManualControl.py (Controller.py is a python library, which will be used as a base for ManualControl)
+  - Communicates with the arduino, as well as ManualControl.py
 
 * Main.py
   - Run this file to start the application
