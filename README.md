@@ -11,7 +11,9 @@ def foo():
 ```
 ## Proposed Files
 
-The current assumption for these files is that they are allow you to control motors, in a manner similar to NI MAX. This means no support for dataruns or interface with oscilloscope. Functionality for multiple motors and dataruns will be added later
+The current assumption for these files is that they are allow you to control motors, in a manner similar to NI MAX. This means no support for dataruns or interface with oscilloscope. Functionality for multiple motors and dataruns will be added later.
+
+(Note from Sam: The Controller Library should be built from the ground up to allow for multiple motors. It would be much harder to add this in at a later stage)
 
 Any planned functions can be added to these files as is seen fit
 
