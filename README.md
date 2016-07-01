@@ -44,7 +44,7 @@ Any planned functions can be added to these files as is seen fit
   - A GUI class that communicates with Controller.py, and provides NI-MAX functionality
   - It will ultimately manifest itself as a sidebar, but for now it will probably be the only GUI we have.
   - Features (which could possibly be translated into functions):
-    - Motor Dashboard (in no particular order):
+    - Motor Dashboard that indicates for each motor (in no particular order):
       - Has it been killed?
       - Is it moving?
       - Is it ready?
