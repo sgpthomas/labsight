@@ -59,3 +59,29 @@ Any planned functions can be added to these files as is seen fit
       - This information is then stored in the global variables from Main.py
     - Changing the motor's speed
     - *Eventually, you'll be able to change between motors*
+
+## Protocol
+
+  - Every message has three parts (symbol, command, data)
+    - Symbol indicates the how the action is performed
+      - Symbols are always 1 character
+    - Command indicates the specific action
+    - Data consists of the arguments or output for the action (this depends on the symbol used)
+  - Controller initiates all contact and child always responds with something
+  - Send underscore `_` when there is no data to send
+* Symbols Used by Controller
+  - Questions (?) - Get function
+  - Commands (!) - Set function
+* Symbols Used by Arduino
+  - Responses to Questions ($) - Get function Return
+  - Confirmation of commands (#) - Set Function Confirmation
+  - Stream (>)
+  - End stream (/)
+  - Errors (@)
+* Commands
+  - listen
+  - step
+  - id
+  - kill
+  - halt?
+  - speed
