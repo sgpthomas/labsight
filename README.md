@@ -69,9 +69,10 @@ Any planned functions can be added to these files as is seen fit
     - Data consists of the arguments or output for the action (this depends on the symbol used)
   - Controller initiates all contact and child always responds with something
   - Send underscore `_` when there is no data to send
+
 * Symbols Used by Controller
-  - Questions (?) - Get function
-  - Commands (!) - Set function
+  - Questions, like a get function (?)
+  - Commands, like a set function (!)
 * Symbols Used by Arduino
   - Responses to Questions ($) - Get function Return
   - Confirmation of commands (#) - Set Function Confirmation
