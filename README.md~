@@ -25,7 +25,7 @@ Any planned functions can be added to these files as is seen fit
 * Controller.py
   - Based off of the current Controller.py
   - Conducts the serial communications, and contains the base functionality for all of the various protocol commands related to the controller
-  - Communicates with the arduino, as well as ManualControl.py
+  - Communicates with the arduino, as well as ManualControl.py (Controller.py is a python library, which will be used as a base for ManualControl)
 
 * Main.py
   - Run this file to start the application
@@ -62,23 +62,24 @@ Any planned functions can be added to these files as is seen fit
 
 ## Protocol
 
-  - Every message has three parts (symbol, command, data)
-    - Symbol indicates the how the action is performed
-      - Symbols are always 1 character
-    - Command indicates the specific action
-    - Data consists of the arguments or output for the action (this depends on the symbol used)
-  - Controller initiates all contact and child always responds with something
-  - Send underscore `_` when there is no data to send
-* Symbols Used by Controller
-  - Questions (?) - Get function
-  - Commands (!) - Set function
-* Symbols Used by Arduino
-  - Responses to Questions ($) - Get function Return
-  - Confirmation of commands (#) - Set Function Confirmation
-  - Stream (>)
-  - End stream (/)
-  - Errors (@)
-* Commands
+  - *Every message has three parts (symbol, command, data)*
+    - *Symbol indicates the how the action is performed*
+      - *Symbols are always 1 character*
+    - *Command indicates the specific action*
+    - *Data consists of the arguments or output for the action (this depends on the symbol used)*
+  - *Controller initiates all contact and child always responds with something*
+  - *Send underscore `_` when there is no data to send*
+
+* **Symbols Used by Controller**
+  - Questions, like a get function (**?**)
+  - Commands, like a set function (**!**)
+* **Symbols Used by Arduino**
+  - Responses to Questions (**$**) - Get function Return
+  - Confirmation of commands (**#**) - Set Function Confirmation
+  - Stream (**>**)
+  - End stream (**/**)
+  - Errors (**@**)
+* **Commands**
   - listen
   - step
   - id
