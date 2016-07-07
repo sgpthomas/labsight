@@ -76,4 +76,4 @@ def sendMessage(symbol, command, data, port):
     except SerialException:
         print("Failed to open {}".format(port))
 
-print(getMotors())
+# print(getMotors())
