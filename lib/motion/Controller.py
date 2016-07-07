@@ -4,11 +4,15 @@ from serial.serialutil import SerialException
 import io
 from time import sleep
 
+# globals
 devices = {}
+ports = {}
 
 # response
+messages = {}
 estCall = "? listen _"
 estResponse = "$ listen yes"
+
 
 def main():
     devices = findPorts()
@@ -16,7 +20,6 @@ def main():
     print(devices)
 
 def findPorts():
-    ret = {}
 
     # List Available serial ports
     for port in list.comports():
@@ -24,12 +27,12 @@ def findPorts():
 
         if (establishComms(port.device)):
             ID = getID(port.device)
-            ret[ID] = port.device;
+            ports[ID] = port.device;
 
     # if len(ret) < 1:
     #     findPorts()
 
-    return ret
+    return ports
 
 def getID(port):
     ID = sendMessage("? id _", port).split(" ")
@@ -40,9 +43,9 @@ def getID(port):
     return ID[2]
 
 def establishComms(port):
-    response = sendMessage(estCall, port)
+    response = sendMessage("? listen _", port)
 
-    if (response == estResponse):
+    if (response == "$ listen yes"):
         return True
         print("Communication established")
 
@@ -62,8 +65,28 @@ def sendMessage(msg, port):
         sio.flush()
         response = sio.readline().strip()
 
+        response = response.split(" ")
+
+        if len(response) != 3:
+            raise Exception("Arduino response was not proper length, but was {}".format(response))
+
         return response
     except SerialException:
         print("Failed to open {}".format(port))
+
+def move(steps, port):
+    command = "! move " + str(steps)
+    confirmation = sendMessage(command, ports[port])
+    if !(confirmation == "# move " + str(steps))
+        raise SerialException("The motor has not confirmed its movement, and it may have not moved")
+    return confirmation
+def kill(port):
+    command = "! kill _"
+    confirmation = sendMessage(command, ports[port])
+    if confirmation != "# kill _":
+        raise SerialException("The motor has not confirmed the action, and may have not been killed")
+    return confirmation
+
+
 
 main()
