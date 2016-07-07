@@ -77,7 +77,7 @@ def sendMessage(msg, port):
 def move(steps, port):
     command = "! move " + str(steps)
     confirmation = sendMessage(command, ports[port])
-    if !(confirmation == "# move " + str(steps))
+    if not confirmation == "# move " + str(steps):
         raise SerialException("The motor has not confirmed its movement, and it may have not moved")
     return confirmation
 def kill(port):
