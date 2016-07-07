@@ -87,6 +87,5 @@ def kill(port):
         raise SerialException("The motor has not confirmed the action, and may have not been killed")
     return confirmation
 
-
-
 main()
+
