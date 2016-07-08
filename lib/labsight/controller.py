@@ -5,6 +5,7 @@ import io
 import os
 from time import sleep
 from motor import Motor
+import termios
 
 version = "0.1"
 
@@ -17,14 +18,14 @@ class Symbol():
     CLOSE_STREAM = "/"
 
 """ Message Structure """
-class Message:
+class Message(object):
     def __init__(self, symbol, command, data):
         self.symbol = symbol
         self.command = command
         self.data = data
 
-    def __str__(self):
-        return "{} {} {}".format(self.symbol, self.command, self.data)
+    def __repr__(self):
+        return "Motor({}, {}, {})".format(self.symbol, self.command, self.data)
 
 """ Talks to available ports and creates motor object if it finds anything """
 def getMotors (config_folder = ""):
@@ -34,11 +35,22 @@ def getMotors (config_folder = ""):
     # if configuration folder is not given, then use default
     if (config_folder == ""):
         config_folder = os.path.expanduser(os.path.join("~", ".labsight", "motors"))
-        print(config_folder)
+        if (not os.path.isdir(config_folder)):
+            print("Default config folder doesn't exist. Generating a new one.")
+            os.makedirs(config_folder)
+
+    # print config directory
+    print("Using config directory: {}".format(config_folder))
 
     # search through available ports
     for port in list.comports():
         print("Found " + port.device)
+
+        # Disable reset after hangup
+        with open(port.device) as f:
+            attrs = termios.tcgetattr(f)
+            attrs[2] = attrs[2] & ~termios.HUPCL
+            termios.tcsetattr(f, termios.TCSAFLUSH, attrs)
 
         # if we can establish communications with the port, get the id and then append motor object to motors
         if (establishComms(port.device)):
@@ -116,11 +128,12 @@ def sendMessage(msg, port, func=None):
     except SerialException:
         print("Failed to open {}".format(port))
 
-print(getMotors())
+motors = getMotors()
+print(str(motors[0]))
 
 def func(response):
     print(response)
 
-port = "/dev/ttyACM0"
+port = "/dev/ttyACM1"
 sendMessage(Message(Symbol.COMMAND, "move", '10'), port, func)
 print("done")
