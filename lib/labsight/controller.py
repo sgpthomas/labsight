@@ -134,6 +134,5 @@ print(str(motors[0]))
 def func(response):
     print(response)
 
-port = "/dev/ttyACM1"
-sendMessage(Message(Symbol.COMMAND, "move", '10'), port, func)
+sendMessage(Message(Symbol.COMMAND, "move", '10'), motors[0].port, func)
 print("done")

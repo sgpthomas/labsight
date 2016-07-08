@@ -39,6 +39,7 @@ class Motor:
         archivo = io.open(self.path, "w")
         yaml.dump(self.properties, archivo, default_flow_style = False)
         archivo.close()
+
 """
     def move
 
