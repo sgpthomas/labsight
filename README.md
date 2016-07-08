@@ -80,7 +80,6 @@ Any planned functions can be added to these files as is seen fit
   - End stream (**/**)
   - Errors (**@**)
 * **Commands**
-  - listen
   - step
   - id
   - kill
