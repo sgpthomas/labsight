@@ -6,6 +6,7 @@ class Motor:
     def __init__(self, config_folder, port, eyedee):
         # searches the config_folder directory for a YAML file with the name of eyedee.
         # Stores all other necessary global variables as well
+        self.config_folder = config_folder
         self.port = port
         self.id = eyedee
         self.properties = {}
@@ -16,6 +17,9 @@ class Motor:
             self.load_properties()
         else:
             self.new_properties()
+
+    def __repr__(self):
+        return "Motor('{}', {}, {})".format(self.config_folder, self.port, self.id)
 
     def load_properties(self):
         archivo = io.open(self.path)

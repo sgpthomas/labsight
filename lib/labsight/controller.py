@@ -10,7 +10,7 @@ import termios
 version = "0.1"
 
 """ Symbols """
-class Symbol():    
+class Symbol:    
     ASK = "?"
     COMMAND = "!"
     Answer = "$"
@@ -18,14 +18,14 @@ class Symbol():
     CLOSE_STREAM = "/"
 
 """ Message Structure """
-class Message(object):
+class Message:
     def __init__(self, symbol, command, data):
         self.symbol = symbol
         self.command = command
         self.data = data
 
     def __repr__(self):
-        return "Motor({}, {}, {})".format(self.symbol, self.command, self.data)
+        return "Message({}, {}, {})".format(self.symbol, self.command, self.data)
 
 """ Talks to available ports and creates motor object if it finds anything """
 def getMotors (config_folder = ""):
@@ -128,11 +128,11 @@ def sendMessage(msg, port, func=None):
     except SerialException:
         print("Failed to open {}".format(port))
 
-# motors = getMotors()
-# print(str(motors[0]))
+motors = getMotors()
+print(motors[0])
 
-# def func(response):
-#     print(response)
-
-# sendMessage(Message(Symbol.COMMAND, "move", '10'), motors[0].port, func)
-# print("done")
+def func(response):
+    print(response)
+    
+sendMessage(Message(Symbol.COMMAND, "move", '100'), motors[0].port, func)
+print("done")
