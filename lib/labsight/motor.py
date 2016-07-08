@@ -1,13 +1,14 @@
 import os
 import io
 import yaml
+# import labsight.controller
 
 class Motor:
-    def __init__(self, config_folder, port, eyedee):
+    def __init__(self, config_folder, serial, eyedee):
         # searches the config_folder directory for a YAML file with the name of eyedee.
         # Stores all other necessary global variables as well
         self.config_folder = config_folder
-        self.port = port
+        self.serial = serial
         self.id = eyedee
         self.properties = {}
         self.filename = str(self.id) + ".yml"
@@ -19,7 +20,7 @@ class Motor:
             self.new_properties()
 
     def __repr__(self):
-        return "Motor('{}', {}, {})".format(self.config_folder, self.port, self.id)
+        return "Motor('{}', {}, {})".format(self.config_folder, self.serial, self.id)
 
     def load_properties(self):
         archivo = io.open(self.path)
@@ -34,7 +35,7 @@ class Motor:
     def new_properties(self):
         # Makes a new YAML file in the config
         new_file = io.open(self.path, "w")
-        yaml.dump({"id":self.id}, new_file, default_flow_style = False)
+        yaml.dump({"id":self.id, "step":0}, new_file, default_flow_style = False)
         new_file.close()
         self.load_properties()
 
@@ -44,8 +45,33 @@ class Motor:
         yaml.dump(self.properties, archivo, default_flow_style = False)
         archivo.close()
 
-"""
-    def move
+    def send_message(self, msg, func = None):
+        controller.sendMessage(msg, self.serial, func)
 
+    """The functions that allow you to run certain commands on the motor object:"""
+
+    def getID(self):
+        msg = controller.Message(Symbol.GET, Command.ID, "_")
+        return send_message(msg)
+
+    def setID(self, new_id):
+        msg = controller.Message(Symbol.SET, Command.ID, str(new_id))
+        return send_message(msg)
+
+    def setStep(self, steps):
+        move_msg = controller.Message(Symbol.SET, Command.STEP, str(steps))
+        return send_message(move_msg, self.updateDistance)
+
+    def updateDistance(self, response):
+        self.properties["step"] += distance
+
+    def getStep(self):
+        return self.properties["step"]
+
+    # def setProperty(new_property):
+    #     self
+
+
+"""
     def the rest
 """

@@ -1,98 +1,127 @@
-/* Includes */
 #include <EEPROM.h>
 
-/* Global Variables */
-String id = ""; // stores id of this
-int LED = 13;  // which LED should be flashed as an indicator
+// identity
+String id = "";
 
-/* Built-in Arduino Routines that we need */
+// variables
+int LED = 13;
+
+// version number
+String version_number = "0.1";
+
+// is streaming?
+bool stream = false;
+
+// the setup function runs once when you press reset or power the board
 void setup() {
-    /* 
-    Sets up everything
-
-    - Start Serial
-    - Setup Pins
-        - Led
-        - Interrupt pin for stop switch
-        - Motor Pins (if we need to do this with the library)
-        - Encoder Pins
-    - Remember ID if there is one set
-    - Attach interrupt for Stop Switch `attachInterrupt(interrupt, function, mode);`
-
-    */
+  Serial.begin(9600);
+//  Serial.setTimeout(250);/
+  pinMode(LED, OUTPUT);
+  
+  id = rememberID();
 }
 
 void serialEvent() {
-    /*
-    This method fires every time something is put into the Serial Message Boad. We will
-    use as the starting point for most things. One thing to note here is that reading
-    from the message board destroys the message.
-
-    - Make sure Serial is available
-    - Decide if this should read message (might not want to if sending a stream)
-    - If should read message, parse message and send it to `void processMessage(String symbol, String command, String info)`
-     
-    */
+  if (Serial.available() && !stream) {
+    String symbol = Serial.readStringUntil(' ');
+    String command = Serial.readStringUntil(' ');
+    String info = Serial.readStringUntil('\n');
+    receivedMessage(symbol, command, info);
+    // digitalWrite(LED, HIGH);
+    // delay(500);
+    // digitalWrite(LED, LOW);
+  }
 }
 
-void loop() {
-    /*
-    Nothing here yet
+void receivedMessage(String symbol, String command, String info) {  
+//  if (symbol == "?") {
+//    if (command == "listen") {
+//      Serial.println(estResponse);
+//      
+//    } 
+//    
+//    else if (command == "id") {
+//      Serial.println("$ id " + id);
+//    }
+//  }
+//  
+//  if (symbol == "!") {
+//    if (command == "id") {
+//      id = info;
+//      setID(info);
+//      Serial.println("# id " + info);
+//    }
+//  }
 
-    */
+  if (command == "version") {
+    Serial.println("$ version " + version_number);
+  }
+
+  else if (command == "id") {
+    if (symbol == "?") { // asking for id
+      Serial.println("$ id " + id);
+    } 
+    
+    else if (symbol == "!") { // set id
+      id = info;
+      setID(info);
+      Serial.println("# id " + info);
+    }
+  }
+
+  else if (command == "move") {
+    if (symbol == "!") { // move and open data stream
+      stream = true;
+      Serial.println("> move " + info);
+      for (int i = 0; i < info.toInt(); i++) {
+        Serial.println(i);
+        // delay(200);
+      }
+      Serial.println("/ move " + info);
+      stream = false;
+    }
+  }
 }
 
-/* Custom Routines that we need */
 String rememberID() {
-    /*
-    Read EEPROM to see if there is already an ID set. If there is one, return the ID String,
-    else, return an empty String
-
-    */
+  char value;
+  int address = 0;
+  String id = "";
+  while (true) { // loop
+    value = EEPROM.read(address);
+    
+    if (value != 0) { // value is not null
+      id += value;
+    } else {
+      break;
+    }
+    
+    address++;
+  }
+  
+  return id;
 }
 
-void clearMemory() {
-    /*
-    Goes through every byte in EEPROM and sets it to 0
-
-    */
+void setID(String id) {
+  clearMem();
+  for (int i = 0; i < id.length(); i++) {
+    EEPROM.write(i, id[i]);
+  }
 }
 
-void processMessage(String symbol, String command, String info) {
-    /*
-    Proccess message and take necessary steps
-
-    TODO: Figure out an efficient way to process messages and do necessary things
-    */
+void clearMem() {
+  for (int i = 0 ; i < EEPROM.length() ; i++) {
+    EEPROM.write(i, 0);
+  }  
 }
 
-/* Setters and Getters for all Global Variables */
-// id
-void set_id(String id) {
-    /*
-    Clears memory, writes given string into EEPROM, and then sets global id to given string
+int address = 0;
+byte value;
+boolean l = true;
 
-    */
+// the loop function runs over and over again forever
+void loop() {
+
 }
 
-String get_id() {
-    /*
-    Returns global id
 
-    */
-}
-
-// led
-void set_led(int pin) {
-    /*
-    Sets Global led pin
-
-    */
-}
-
-int get_led(int pin) {
-    /*
-    Returns Global led pin
-
-    */
-}
