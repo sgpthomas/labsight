@@ -6,7 +6,7 @@ from time import sleep
 
 version = "0.1"
 
-""" Talks to availalbe ports and creates motor object if it finds anything """
+""" Talks to available ports and creates motor object if it finds anything """
 def getMotors (config_folder = ""):
     # initialize return array
     motors = []
