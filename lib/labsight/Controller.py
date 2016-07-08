@@ -6,6 +6,24 @@ from time import sleep
 
 version = "0.1"
 
+""" Symbols """
+class Symbol():    
+    ASK = "?"
+    COMMAND = "!"
+    Answer = "$"
+    OPEN_STREAM = ">"
+    CLOSE_STREAM = "/"
+
+""" Message Structure """
+class Message:
+    def __init__(self, symbol, command, data):
+        self.symbol = symbol
+        self.command = command
+        self.data = data
+
+    def __str__(self):
+        return "{} {} {}".format(self.symbol, self.command, self.data)
+
 """ Talks to available ports and creates motor object if it finds anything """
 def getMotors (config_folder = ""):
     # initialize return array
@@ -21,7 +39,7 @@ def getMotors (config_folder = ""):
 
         # if we can establish communications with the port, get the id and then append motor object to motors
         if (establishComms(port.device)):
-            ID = sendMessage("?", "id", "_", port.device)
+            ID = sendMessage(Symbol.ASK, "id", "_", port.device)
             motors.append(str(ID[2]))
             # motors.append(Motor(config_folder, port.device, ID))
 
@@ -30,7 +48,7 @@ def getMotors (config_folder = ""):
 
 def establishComms(port):
     # send initial message
-    response = sendMessage ("?", "version", "_", port)
+    response = sendMessage (Symbol.ASK, "version", "_", port)
 
     # check to make sure that returned version matches ours
     if (response[2] == version):
@@ -39,7 +57,7 @@ def establishComms(port):
     # communications have not been established
     return False
 
-def sendMessage(symbol, command, data, port, func=None):
+def sendMessage(msg, port, func=None):
     # define delay because of serial gods looking down on us
     delay = 0.6
     try:
@@ -50,11 +68,11 @@ def sendMessage(symbol, command, data, port, func=None):
         ser.open()
 
         # create message
-        msg = "{} {} {}".format(symbol, command, data)
+        msg_string = "{} {} {}".format(msg.symbol, msg.command, msg.data)
 
         # ask the gods of serial about the delays
         # sleep(delay)
-        ser.write(bytes(msg, "ascii"))
+        ser.write(bytes(msg_string, "ascii"))
         # sleep(delay)
 
         # read response and strip extrenous space and split it
@@ -64,13 +82,28 @@ def sendMessage(symbol, command, data, port, func=None):
         if len(response) != 3:
             raise Exception("Arduino response was not proper length, but was {}".format(response))
 
+        # format response array into a Message object
+        response = Message(response[0], response[1], response[2])
+
         # make sure that response has the same command as initial message
-        if response[1] != command:
-            raise Exception("Arduino responded with incorrect command. {} instead of {}".format(response[1], command))
+        if response.command != msg.command:
+            raise Exception("Arduino responded with incorrect command. {} instead of {}".format(response.command, msg.command))
 
         # if response opens a stream, pass the serial instance to a given function
-        if response[0] == ">" and func != None:
-            func(ser)
+        if response.symbol == Symbol.OPEN_STREAM and func != None:
+            while True:
+                response = ser.readline().strip().decode("ascii").split(" ")
+
+                # check if received full message or just data
+                if len(response) == 3:
+                    # format response array into a Message object
+                    response = Message(response[0], response[1], response[2])
+
+                    if (response.symbol == Symbol.CLOSE_STREAM):
+                        break
+
+                # if we reach here, pass the data to the given delegate
+                func(response)
 
         return response
     except SerialException:
@@ -78,13 +111,9 @@ def sendMessage(symbol, command, data, port, func=None):
 
 # print(getMotors())
 
-def func(ser):
-    while True:
-        response = ser.readline().strip().decode("ascii").split(" ")
-        print(response)
-        if response[0] == "/":
-            break
+def func(response):
+    print(response)
 
 port = "/dev/ttyACM0"
-sendMessage("!", "move", '10', port, func)
+sendMessage(Message(Symbol.COMMAND, "move", '10'), port, func)
 print("done")
