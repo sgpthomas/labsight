@@ -77,4 +77,3 @@ def sendMessage(symbol, command, data, port):
         print("Failed to open {}".format(port))
 
 # print(getMotors())
->>>>>>> 936319434aff5498a5db2bf1bc18d7ff8d213931
