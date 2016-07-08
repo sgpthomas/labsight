@@ -1,3 +1,6 @@
 .DS_Store
 *.md~
 *.pyc
+lib/build/
+lib/dist/
+lib/labsight.egg-info/

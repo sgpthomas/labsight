@@ -4,7 +4,7 @@ from serial.serialutil import SerialException
 import io
 import os
 from time import sleep
-from motor import Motor
+from labsight.motor import Motor
 import termios
 
 version = "0.1"
@@ -128,11 +128,11 @@ def sendMessage(msg, port, func=None):
     except SerialException:
         print("Failed to open {}".format(port))
 
-motors = getMotors()
-print(str(motors[0]))
+# motors = getMotors()
+# print(str(motors[0]))
 
-def func(response):
-    print(response)
+# def func(response):
+#     print(response)
 
-sendMessage(Message(Symbol.COMMAND, "move", '10'), motors[0].port, func)
-print("done")
+# sendMessage(Message(Symbol.COMMAND, "move", '10'), motors[0].port, func)
+# print("done")
