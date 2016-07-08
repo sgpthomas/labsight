@@ -3,7 +3,7 @@ import io
 import yaml
 
 class Motor:
-    def __init__(self,config_folder, port, eyedee):
+    def __init__(self, config_folder, port, eyedee):
         # searches the config_folder directory for a YAML file with the name of eyedee.
         # Stores all other necessary global variables as well
         self.port = port
@@ -44,8 +44,3 @@ class Motor:
 
     def the rest
 """
-
-foo = Motor(os.path.expanduser("~/Desktop/config"), "/dev/whatever", "different_id")
-print(foo.path)
-
-print(foo.properties)

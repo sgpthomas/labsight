@@ -2,7 +2,9 @@ import serial
 import serial.tools.list_ports as list
 from serial.serialutil import SerialException
 import io
+import os
 from time import sleep
+from motor import Motor
 
 version = "0.1"
 
@@ -30,8 +32,9 @@ def getMotors (config_folder = ""):
     motors = []
 
     # if configuration folder is not given, then use default
-    # if (config_folder == ""):
-
+    if (config_folder == ""):
+        config_folder = os.path.expanduser(os.path.join("~", ".labsight", "motors"))
+        print(config_folder)
 
     # search through available ports
     for port in list.comports():
@@ -39,19 +42,23 @@ def getMotors (config_folder = ""):
 
         # if we can establish communications with the port, get the id and then append motor object to motors
         if (establishComms(port.device)):
-            ID = sendMessage(Symbol.ASK, "id", "_", port.device)
-            motors.append(str(ID[2]))
-            # motors.append(Motor(config_folder, port.device, ID))
+
+            # get id from arduino
+            response = sendMessage(Message(Symbol.ASK, "id", "_"), port.device)
+            ID = response.data
+
+            # create motor object and append it to the array
+            motors.append(Motor(config_folder, port.device, ID))
 
     # return motor array
     return motors
 
 def establishComms(port):
     # send initial message
-    response = sendMessage (Symbol.ASK, "version", "_", port)
+    response = sendMessage (Message(Symbol.ASK, "version", "_"), port)
 
     # check to make sure that returned version matches ours
-    if (response[2] == version):
+    if (response.data == version):
         return True
 
     # communications have not been established
@@ -109,7 +116,7 @@ def sendMessage(msg, port, func=None):
     except SerialException:
         print("Failed to open {}".format(port))
 
-# print(getMotors())
+print(getMotors())
 
 def func(response):
     print(response)
