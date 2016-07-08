@@ -12,7 +12,7 @@ def getMotors (config_folder = ""):
     motors = []
 
     # if configuration folder is not given, then use default
-    if (config_folder == ""):
+    # if (config_folder == ""):
 
 
     # search through available ports
@@ -39,30 +39,26 @@ def establishComms(port):
     # communications have not been established
     return False
 
-def sendMessage(symbol, command, data, port):
+def sendMessage(symbol, command, data, port, func=None):
     # define delay because of serial gods looking down on us
     delay = 0.6
     try:
         # create serial port and relevant text wrapper
-        ser = serial.Serial(port, timeout=1)
-        sio = io.TextIOWrapper(io.BufferedRWPair(ser, ser))
+        ser = serial.Serial(None, timeout=2)
+        ser.port = port
+        ser.dsrdtr = True
+        ser.open()
 
         # create message
         msg = "{} {} {}".format(symbol, command, data)
 
         # ask the gods of serial about the delays
-        sleep(delay)
-        sio.write(msg)
-        sleep(delay)
+        # sleep(delay)
+        ser.write(bytes(msg, "ascii"))
+        # sleep(delay)
 
-        # write message to serial
-        sio.flush()
-
-        # read response and strip extrenous space
-        response = sio.readline().strip()
-
-        # split the message into parts
-        response = response.split(" ")
+        # read response and strip extrenous space and split it
+        response = ser.readline().strip().decode("ascii").split(" ")
 
         # make sure that there are 3 parts
         if len(response) != 3:
@@ -72,8 +68,23 @@ def sendMessage(symbol, command, data, port):
         if response[1] != command:
             raise Exception("Arduino responded with incorrect command. {} instead of {}".format(response[1], command))
 
+        # if response opens a stream, pass the serial instance to a given function
+        if response[0] == ">" and func != None:
+            func(ser)
+
         return response
     except SerialException:
         print("Failed to open {}".format(port))
 
 # print(getMotors())
+
+def func(ser):
+    while True:
+        response = ser.readline().strip().decode("ascii").split(" ")
+        print(response)
+        if response[0] == "/":
+            break
+
+port = "/dev/ttyACM0"
+sendMessage("!", "move", '10', port, func)
+print("done")
