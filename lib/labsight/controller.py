@@ -49,6 +49,9 @@ def establishComms(port):
     # send initial message
     response = sendMessage (Message(Symbol.GET, "version", "_"), port)
 
+    if response == None:
+        return False
+
     # check to make sure that returned version matches ours
     if (response.data == version):
         return True

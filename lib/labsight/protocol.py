@@ -1,5 +1,11 @@
+import serial
+import serial.tools.list_ports as list
+from serial.serialutil import SerialException
+from time import sleep
+
+
 """ Symbols """
-class Symbol:    
+class Symbol:
     GET = "?"
     SET = "!"
     ANSWER = "$"
@@ -40,14 +46,16 @@ def sendMessage(msg, ser, func=None):
 
         # make sure that there are 3 parts
         if len(response) != 3:
-            raise Exception("Arduino response was not proper length, but was {}".format(response))
+            print("Arduino response was not proper length, but was {}".format(response))
+            return None
 
         # format response array into a Message object
         response = Message(response[0], response[1], response[2])
 
         # make sure that response has the same command as initial message
         if response.command != msg.command:
-            raise Exception("Arduino responded with incorrect command. {} instead of {}".format(response.command, msg.command))
+            print("Arduino responded with incorrect command. {} instead of {}".format(response.command, msg.command))
+            return None
 
         # if response opens a stream, pass the serial instance to a given function
         if response.symbol == Symbol.OPEN_STREAM:
