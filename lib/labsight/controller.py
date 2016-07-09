@@ -5,6 +5,7 @@ import io
 import os
 from time import sleep
 from labsight.motor import Motor
+from labsight.protocol import Symbol, Command, Message, sendMessage
 import termios
 
 version = "0.1"
