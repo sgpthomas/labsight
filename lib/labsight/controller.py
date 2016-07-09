@@ -6,7 +6,6 @@ import os
 from time import sleep
 from labsight.motor import Motor
 from labsight.protocol import Symbol, Command, Message, sendMessage
-import termios
 
 version = "0.1"
 
@@ -65,5 +64,5 @@ print(motors)
 def func(response):
     print(response)
 
-motors[0].send_message(Message(Symbol.SET, "move", "100"), func)
+motors[0].send_message(Message(Symbol.SET, Command.STEP, "100"), func)
 print("done")

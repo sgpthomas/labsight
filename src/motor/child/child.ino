@@ -69,15 +69,15 @@ void receivedMessage(String symbol, String command, String info) {
     }
   }
 
-  else if (command == "move") {
+  else if (command == "step") {
     if (symbol == "!") { // move and open data stream
       stream = true;
-      Serial.println("> move " + info);
+      Serial.println("> step " + info);
       for (int i = 0; i < info.toInt(); i++) {
         Serial.println(i);
         // delay(200);
       }
-      Serial.println("/ move " + info);
+      Serial.println("/ step " + info);
       stream = false;
     }
   }
