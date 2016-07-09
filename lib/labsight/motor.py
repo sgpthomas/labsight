@@ -68,9 +68,11 @@ class Motor:
     def getStep(self):
         return self.properties["step"]
 
-    # def setProperty(new_property):
-    #     self
+    def setKill():
+        msg = controller.Message(Symbol.SET, Command.KILL, "_")
 
+    def setProperty(new_property, value):
+        self.properties[new_property] = value
 
 """
     def the rest
