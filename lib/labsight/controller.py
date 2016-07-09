@@ -32,6 +32,7 @@ def getMotors (config_folder = ""):
         ser = serial.Serial(port.device, timeout=2)
         sleep(0.6)
 
+
         # if we can establish communications with the port, get the id and then append motor object to motors
         if (establishComms(ser)):
 
