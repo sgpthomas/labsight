@@ -1,7 +1,7 @@
 import os
 import io
 import yaml
-# import labsight.controller
+from labsight.protocol import Symbol, Command, Message, sendMessage
 
 class Motor:
     def __init__(self, config_folder, serial, eyedee):
@@ -46,20 +46,20 @@ class Motor:
         archivo.close()
 
     def send_message(self, msg, func = None):
-        controller.sendMessage(msg, self.serial, func)
+        sendMessage(msg, self.serial, func)
 
     """The functions that allow you to run certain commands on the motor object:"""
 
     def getID(self):
-        msg = controller.Message(Symbol.GET, Command.ID, "_")
+        msg = Message(Symbol.GET, Command.ID, "_")
         return send_message(msg)
 
     def setID(self, new_id):
-        msg = controller.Message(Symbol.SET, Command.ID, str(new_id))
+        msg = Message(Symbol.SET, Command.ID, str(new_id))
         return send_message(msg)
 
     def setStep(self, steps):
-        move_msg = controller.Message(Symbol.SET, Command.STEP, str(steps))
+        move_msg = Message(Symbol.SET, Command.STEP, str(steps))
         return send_message(move_msg, self.updateDistance)
 
     def updateDistance(self, response):
