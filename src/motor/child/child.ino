@@ -12,13 +12,33 @@ String version_number = "0.1";
 // is streaming?
 bool stream = false;
 
+// encoder pins
+int encoderA = 2;
+int encoderB = 4;
+
+// encoder position
+volatile unsigned int encoderPos = 0;
+
 // the setup function runs once when you press reset or power the board
 void setup() {
   Serial.begin(9600);
-//  Serial.setTimeout(250);/
   pinMode(LED, OUTPUT);
+
+  // setup encoder pins and turn on internal pull-up resistor
+  pinMode(encoderA, INPUT);
+  digitalWrite(encoderA, HIGH);
+
+  pinMode(encoderB, INPUT);
+  digitalWrite(encoderB, HIGH);
+
+  // attach interrupt to keep track of posittion
+  attachInterrupt(digitalPinToInterrupt(encoderA), updateEncoderPos, CHANGE);
   
   id = rememberID();
+}
+
+void updateEncoderPos() {
+  
 }
 
 void serialEvent() {
