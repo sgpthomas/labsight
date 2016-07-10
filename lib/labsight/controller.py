@@ -1,7 +1,6 @@
 import serial
 import serial.tools.list_ports as list
 from serial.serialutil import SerialException
-import io
 import os
 from time import sleep
 from labsight.motor import Motor
@@ -58,6 +57,8 @@ def establishComms(port):
     # communications have not been established
     return False
 
+"""Testing"""
+
 motors = getMotors()
 print(motors)
 
@@ -65,4 +66,5 @@ def func(response):
     print(response)
 
 motors[0].send_message(Message(Symbol.SET, Command.STEP, "100"), func)
+
 print("done")
