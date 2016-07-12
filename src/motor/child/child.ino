@@ -22,7 +22,7 @@ volatile unsigned int encoderPos = 0;
 
 // I tried to implement these structs like the classes, in protocol.py, but they didn't work, so I ended up hardcoding everything. Feel free to try t make them work if you'd like
 
-struct Symbol {
+struct sym {
   String GET = "?";
   String SET = "!";
   String ANSWER = "$";
@@ -30,13 +30,17 @@ struct Symbol {
   String CLOSE_STREAM = "/";
 };
 
-struct Command {
+sym Symbol; // This and the other one below it is a bit hacky, but who cares
+
+struct com {
   String ID = "id";
   String STEP = "step";
   String KILL = "kill";
   String SPEED = "speed";
   String VERSION = "version";
 };
+
+com Command;
 
 String rememberID() {
   char value;
@@ -92,11 +96,11 @@ String join(String symbol, String command, String data) {
 // ----------------Getter Functions----------------
 
 void getID() {
-  Serial.println(join("$", "id", id));
+  Serial.println(join(Symbol.SET, Command.ID, id));
 }
 
 void getVersion() {
-  Serial.println(join("$", "version", version_number));
+  Serial.println(join(Symbol.SET, Command.VERSION, version_number));
 }
 
 // ----------------Setter Functions----------------
@@ -106,19 +110,19 @@ void setID(String id) {
   for (int i = 0; i < id.length(); i++) {
     EEPROM.write(i, id[i]);
   }
-  Serial.println(join("$", "id", id));
+  Serial.println(join(Symbol.ANSWER, Command.ID, id));
 }
 
 void setVersion(String data) { // Does this need to write the version to EEPROM? Why write the ID, and not the version?
   version_number = data;
-  Serial.println(join("$", "version", version_number));
+  Serial.println(join(Symbol.SET, Command.VERSION, version_number));
 }
 
 
 // The below function supports only relative motion
 void setStep(String distance) {
    stream = true;
-   Serial.println(join(">", "step", distance));
+   Serial.println(join(Symbol.OPEN_STREAM, Command.STEP, distance));
    if (distance.toInt() > 0) {
      uint8_t direction = FORWARD;
    }
@@ -133,13 +137,13 @@ void setStep(String distance) {
      Serial.println(i);
      //delay(200);
    }
-   Serial.println(join(">", "step", distance));
+   Serial.println(join(Symbol.CLOSE_STREAM, Command.STEP, distance));
    stream = false;
 }
 
 void setKill() {
   motor.release();
-  Serial.println(join("$", "kill", "true"));
+  Serial.println(join(Symbol.SET, Command.KILL, "_")); //There's got to be something better to put into the data slot than "_"
 }
 
 void clearMem() {
@@ -164,11 +168,11 @@ void serialEvent() {
 }
 
 void receivedMessage(String symbol, String command, String data) {  
-  if (symbol == "?") {
-    if (command == "id") {
+  if (symbol == Symbol.GET) {
+    if (command == Command.ID) {
       getID();
     }
-    else if (command == "version") {
+    else if (command == Command.VERSION) {
       getVersion();
     }
 //      All of these cases below are probably unnecessary, as the controller can do it for the Arduino:
@@ -188,20 +192,20 @@ void receivedMessage(String symbol, String command, String data) {
   }
     
   
-  else if (symbol == "!") {
-    if (command == "id") {
+  else if (symbol == Symbol.SET) {
+    if (command == Command.ID) {
       setID(data);
     }
-    else if (command == "version") {
+    else if (command == Command.VERSION) {
       setVersion(data);
     }
-    else if (command == "step") {
+    else if (command == Command.STEP) {
       setStep(data);
     }
-    else if (command == "speed") {
+    else if (command == Command.SPEED) {
       setSpeed(data); //This function is already in the motor shield library
     }
-    else if (command == "kill") {
+    else if (command == Command.KILL) {
         setKill();
     }
     else {
