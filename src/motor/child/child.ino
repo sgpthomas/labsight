@@ -14,10 +14,11 @@ bool stream = false;
 
 // encoder pins
 int encoderA = 2;
-int encoderB = 4;
+int encoderB = 3;
 
-// encoder position
+// encoder position and previous encoder pin sum
 volatile unsigned int encoderPos = 0;
+int prevEncoderSum = 0;
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -33,12 +34,57 @@ void setup() {
 
   // attach interrupt to keep track of posittion
   attachInterrupt(digitalPinToInterrupt(encoderA), updateEncoderPos, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoderB), updateEncoderPos, CHANGE);
+
+  // initalize prevEncoderSum
+  prevEncoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
   
   id = rememberID();
 }
 
+
+int binaryToDecimal(int a, int b) {
+  return (a*2 + b*1);
+}
+
 void updateEncoderPos() {
-  
+  int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
+
+  switch(encoderSum) {
+    case 1:
+      if (prevEncoderSum == 3) {
+        encoderPos ++;
+      } else {
+        encoderPos --;
+      }
+      break;
+      
+    case 0:
+      if (prevEncoderSum == 1) {
+        encoderPos ++;
+      } else {
+        encoderPos --;
+      }
+      break;
+
+    case 2:
+      if (prevEncoderSum == 0) {
+        encoderPos ++;
+      } else {
+        encoderPos --;
+      }
+      break;
+
+    case 3:
+      if (prevEncoderSum == 2) {
+        encoderPos ++;
+      } else {
+        encoderPos --;
+      }
+      break;
+  }
+
+  Serial.println(encoderPos);
 }
 
 void serialEvent() {
@@ -93,9 +139,14 @@ void receivedMessage(String symbol, String command, String info) {
     if (symbol == "!") { // move and open data stream
       stream = true;
       Serial.println("> step " + info);
-      for (int i = 0; i < info.toInt(); i++) {
-        Serial.println(i);
-        // delay(200);
+
+      int startPos = encoderPos;
+      int prevPos = encoderPos;
+      while (encoderPos != info.toInt() + startPos) {
+        if (encoderPos != prevPos) {
+          Serial.println(encoderPos);
+          prevPos = encoderPos;
+        }
       }
       Serial.println("/ step " + info);
       stream = false;
