@@ -18,6 +18,7 @@ class Command:
     STEP = "step"
     KILL = "kill"
     SPEED = "speed"
+    VERSION = "version"
 
 """ Message Structure """
 class Message:
