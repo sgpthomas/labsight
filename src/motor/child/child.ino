@@ -1,5 +1,7 @@
 #include <EEPROM.h>
-#include <AFMotor.h>
+#include <Wire.h>
+#include <Adafruit_MotorShield.h>
+#include "utility/Adafruit_MS_PWMServoDriver.h"
 
 // identity
 String id = "";
@@ -20,7 +22,9 @@ int encoderB = 4;
 // encoder position
 volatile unsigned int encoderPos = 0;
 
-// I tried to implement these structs like the classes, in protocol.py, but they didn't work, so I ended up hardcoding everything. Feel free to try t make them work if you'd like
+// Hardware objects
+
+Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 
 struct sym {
   String GET = "?";
@@ -81,10 +85,10 @@ void setup() {
   id = rememberID();
 
   // Set up the motor shield object
-  Adafruit_MotorShield AFMS = Adafruit_MotorShield();
+
 
   // Set up stepper motor object
-  Adafruit_StepperMotor *motor = AFMS.getStepper(Steps_per_revolution, Motor_Shield_Port);
+
   // Those 2 arguments need to be set to something
   // Also, the asterisk means this variable is just a pointer. I don't why it's worth doing that, but it's what the library reference did.
 }
