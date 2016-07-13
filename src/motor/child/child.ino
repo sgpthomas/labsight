@@ -17,10 +17,11 @@ bool stream = false;
 
 // encoder pins
 int encoderA = 2;
-int encoderB = 4;
+int encoderB = 3;
 
-// encoder position
+// encoder position and previous encoder pin sum
 volatile unsigned int encoderPos = 0;
+int prevEncoderSum = 0;
 
 // Hardware objects
 
@@ -81,8 +82,56 @@ void setup() {
 
   // attach interrupt to keep track of position
   attachInterrupt(digitalPinToInterrupt(encoderA), updateEncoderPos, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(encoderB), updateEncoderPos, CHANGE);
+
+  // initalize prevEncoderSum
+  prevEncoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
   
   id = rememberID();
+
+int binaryToDecimal(int a, int b) {
+  return (a*2 + b*1);
+}
+
+void updateEncoderPos() {
+  int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
+
+  switch(encoderSum) {
+    case 1:
+      if (prevEncoderSum == 3) {
+        encoderPos ++;
+      } else {
+        encoderPos --;
+      }
+      break;
+      
+    case 0:
+      if (prevEncoderSum == 1) {
+        encoderPos ++;
+      } else {
+        encoderPos --;
+      }
+      break;
+
+    case 2:
+      if (prevEncoderSum == 0) {
+        encoderPos ++;
+      } else {
+        encoderPos --;
+      }
+      break;
+
+    case 3:
+      if (prevEncoderSum == 2) {
+        encoderPos ++;
+      } else {
+        encoderPos --;
+      }
+      break;
+  }
+
+  Serial.println(encoderPos);
+}
 
   // Set up the motor shield object
 
