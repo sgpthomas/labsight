@@ -9,8 +9,8 @@ class Symbol:
     GET = "?"
     SET = "!"
     ANSWER = "$"
-    OPEN_STREAM = ">"
-    CLOSE_STREAM = "/"
+    STREAM = ">"
+    ERROR = "@"
 
 """Commands"""
 class Command:
