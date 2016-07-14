@@ -10,7 +10,7 @@ String id = "";
 int LED = 13;
 
 // version number
-String version_number = "0.1";
+String version_number = "0.3";
 
 // is streaming?
 bool stream = false;
@@ -27,12 +27,20 @@ int prevEncoderSum = 0;
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 
+// Connect a stepper motor with 200 steps per revolution (1.8 degree)
+// to motor port #1 (M1 and M2)
+
+Adafruit_StepperMotor *motor = AFMS.getStepper(200, 1);
+
+uint8_t default_style = SINGLE;
+uint16_t default_speed = 60;
+
 struct sym {
   String GET = "?";
   String SET = "!";
   String ANSWER = "$";
-  String OPEN_STREAM = ">";
-  String CLOSE_STREAM = "/";
+  String STREAM = ">";
+  String ERROR = "@";
 };
 
 sym Symbol; // This and the other one below it is a bit hacky, but who cares
@@ -47,7 +55,13 @@ struct com {
 
 com Command;
 
-String rememberID() {
+struct dat {
+  String NIL = "_";
+};
+
+dat Data;
+
+String readID() {
   char value;
   int address = 0;
   String id = "";
@@ -66,8 +80,6 @@ String rememberID() {
   return id;
 }
 
-
-
 // the setup function runs once when you press reset or power the board
 void setup() {
   Serial.begin(9600);
@@ -81,13 +93,19 @@ void setup() {
   digitalWrite(encoderB, HIGH);
 
   // attach interrupt to keep track of position
-  attachInterrupt(digitalPinToInterrupt(encoderA), updateEncoderPos, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(encoderB), updateEncoderPos, CHANGE);
+//  attachInterrupt(digitalPinToInterrupt(encoderA), updateEncoderPos, CHANGE);
+//  attachInterrupt(digitalPinToInterrupt(encoderB), updateEncoderPos, CHANGE);
 
   // initalize prevEncoderSum
   prevEncoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
   
-  id = rememberID();
+  id = readID();
+
+  // Set up motor hardware
+
+  AFMS.begin();
+  motor->setSpeed(default_speed);
+}
 
 int binaryToDecimal(int a, int b) {
   return (a*2 + b*1);
@@ -133,79 +151,59 @@ void updateEncoderPos() {
   Serial.println(encoderPos);
 }
 
-  // Set up the motor shield object
-
-
-  // Set up stepper motor object
-
-  // Those 2 arguments need to be set to something
-  // Also, the asterisk means this variable is just a pointer. I don't why it's worth doing that, but it's what the library reference did.
-}
-
 String join(String symbol, String command, String data) {
   return symbol + " " + command + " " + data;
 }
 
 // ----------------Getter Functions----------------
 
-void getID() {
-  Serial.println(join(Symbol.SET, Command.ID, id));
+String getID() {
+  return id;
 }
 
-void getVersion() {
-  Serial.println(join(Symbol.SET, Command.VERSION, version_number));
+String getVersion() {
+  return version_number;
 }
 
 // ----------------Setter Functions----------------
 
-void setID(String id) {
-  clearMem();
-  for (int i = 0; i < id.length(); i++) {
-    EEPROM.write(i, id[i]);
+String setID(String new_id) {
+  for (int i = 0; i < new_id.length(); i++) {
+    EEPROM.write(i, new_id[i]);
   }
-  Serial.println(join(Symbol.ANSWER, Command.ID, id));
+  EEPROM.write(new_id.length(), 0);
+  
+  id = readID();
+  return id;
 }
 
-void setVersion(String data) { // Does this need to write the version to EEPROM? Why write the ID, and not the version?
+String setVersion(String data) {
   version_number = data;
-  Serial.println(join(Symbol.SET, Command.VERSION, version_number));
+  return version_number;
 }
-
 
 // The below function supports only relative motion
-void setStep(String distance) {
-   stream = true;
-   Serial.println(join(Symbol.OPEN_STREAM, Command.STEP, distance));
-   if (distance.toInt() > 0) {
-     uint8_t direction = FORWARD;
-   }
-   else if (distance < 0) {
-     uint8_t direction = BACKWARD;
-   }
-   else {
-    return;
-   }
-   for (int i = 0; i < distance.toInt(); i++) {
-     motor.step(1, direction);
-     Serial.println(i);
-     //delay(200);
-   }
-   Serial.println(join(Symbol.CLOSE_STREAM, Command.STEP, distance));
-   stream = false;
+String setStep(String distance, uint8_t style = default_style) {
+  stream = true;
+  uint8_t dir = FORWARD;
+  if (distance.toInt() < 0) {
+    dir = BACKWARD;
+  }
+  String index;
+  for (int i = 0; i < abs(distance.toInt()); i++) {
+    motor->step(1, dir, style);
+    if (dir == BACKWARD) {
+      index = i*-1;
+    }
+    Serial.println(join(Symbol.STREAM, Command.STEP, index));
+  }
+  stream = false;
+  return distance;
 }
 
-void setKill() {
-  motor.release();
-  Serial.println(join(Symbol.SET, Command.KILL, "_")); //There's got to be something better to put into the data slot than "_"
-}
-
-void clearMem() {
-  for (int i = 0 ; i < EEPROM.length() ; i++) {
-    EEPROM.write(i, 0);
-  }  
-}
-
-void updateEncoderPos() {
+String setKill() {
+  motor->release();
+  return Data.NIL;
 }
 
 void serialEvent() {
@@ -214,61 +212,54 @@ void serialEvent() {
     String command = Serial.readStringUntil(' ');
     String data = Serial.readStringUntil('\n');
     receivedMessage(symbol, command, data);
-    // digitalWrite(LED, HIGH);
-    // delay(500);
-    // digitalWrite(LED, LOW);
   }
 }
 
-void receivedMessage(String symbol, String command, String data) {  
+void receivedMessage(String symbol, String command, String data) {
+  // initializing strings for constructing a response
+  String respond_symbol = Symbol.ERROR;
+  String respond_command = command;
+  String respond_data = Data.NIL;
+
+  // if symbol is get
   if (symbol == Symbol.GET) {
+    // contruct answer 
+    respond_symbol = Symbol.ANSWER;
+    
     if (command == Command.ID) {
-      getID();
+      respond_data = getID();
     }
     else if (command == Command.VERSION) {
-      getVersion();
-    }
-//      All of these cases below are probably unnecessary, as the controller can do it for the Arduino:
-//      (Also, I know switch cases won't work here, just imagine they're if statements)
-//      case "step":
-//        getStep();
-//        break;
-//      case "speed":
-//        getSpeed();
-//        break;
-//      case "kill":
-//        getKill(); // I don't know if it's possible to implemetn this function, or worth doing when the controller can do it anyway
-//        break;
-     else {
-        // Send some error message about an incoherent command. This can be defined as a function as well
+      respond_data = getVersion();
+    } else {
+      respond_symbol = Symbol.ERROR;
     }
   }
     
-  
+  // if symbol is set
   else if (symbol == Symbol.SET) {
+    // construct response
+    respond_symbol = Symbol.ANSWER;
+    
     if (command == Command.ID) {
-      setID(data);
-    }
-    else if (command == Command.VERSION) {
-      setVersion(data);
+      respond_data = setID(data);
     }
     else if (command == Command.STEP) {
-      setStep(data);
+      respond_data = setStep(data);
     }
     else if (command == Command.SPEED) {
-      setSpeed(data); //This function is already in the motor shield library
+      motor->setSpeed(data.toInt()); //This function is already in the motor shield library
+      respond_data = data;
     }
     else if (command == Command.KILL) {
-        setKill();
-    }
-    else {
-      // Send some error message about an incoherent command
+      respond_data = setKill();
+    } else {
+      respond_symbol = Symbol.ERROR;
     }
   }
+
+  Serial.println(join(respond_symbol, respond_command, respond_data));
 }
-int address = 0;
-byte value;
-boolean l = true;
 
 void loop() {
 
