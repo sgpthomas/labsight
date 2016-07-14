@@ -6,7 +6,7 @@ from time import sleep
 from labsight.motor import Motor
 from labsight.protocol import Symbol, Command, Message, sendMessage
 
-version = "0.1"
+version = "0.2"
 
 """ Talks to available ports and creates motor object if it finds anything """
 def getMotors (config_folder = ""):
