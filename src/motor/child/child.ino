@@ -189,13 +189,14 @@ String setStep(String distance, uint8_t style = default_style) {
   if (distance.toInt() < 0) {
     dir = BACKWARD;
   }
-  String index;
+  int index;
   for (int i = 0; i < abs(distance.toInt()); i++) {
     motor->step(1, dir, style);
+    index = i;
     if (dir == BACKWARD) {
-      index = i*-1;
+      index *= -1;
     }
-    Serial.println(join(Symbol.STREAM, Command.STEP, index));
+    Serial.println(join(Symbol.STREAM, Command.STEP, String(index)));
   }
   stream = false;
   return distance;
