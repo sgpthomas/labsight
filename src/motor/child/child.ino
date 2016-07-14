@@ -235,7 +235,7 @@ void receivedMessage(String symbol, String command, String data) {
       respond_symbol = Symbol.ERROR;
     }
   }
-    
+ 
   // if symbol is set
   else if (symbol == Symbol.SET) {
     // construct response
