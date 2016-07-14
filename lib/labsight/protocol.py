@@ -58,7 +58,7 @@ def sendMessage(msg, ser, func=None):
 
         # if response opens a stream, pass the serial instance to a given function
         if response.symbol == Symbol.STREAM:
-            response = []
+            response = [response]
             while True:
                 # last_response is here because the stream response should be distinct from the final response, which is a list of the stream responses
                 last_response = ser.readline().strip().decode("ascii").split(" ")
