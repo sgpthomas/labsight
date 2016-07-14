@@ -31,8 +31,6 @@ class Message:
         return "Message({}, {}, {})".format(self.symbol, self.command, self.data)
 
 def sendMessage(msg, ser, func=None):
-    # define delay because of serial gods looking down on us
-    delay = 0.6
     try:
         # create message
         msg_string = "{} {} {}".format(msg.symbol, msg.command, msg.data)
@@ -59,7 +57,7 @@ def sendMessage(msg, ser, func=None):
             return None
 
         # if response opens a stream, pass the serial instance to a given function
-        if response.symbol == Symbol.OPEN_STREAM:
+        if response.symbol == Symbol.STREAM:
             response = []
             while True:
                 # last_response is here because the stream response should be distinct from the final response, which is a list of the stream responses
@@ -70,7 +68,7 @@ def sendMessage(msg, ser, func=None):
                     # format response array into a Message object
                     last_response = Message(last_response[0], last_response[1], last_response[2])
 
-                    if (last_response.symbol == Symbol.CLOSE_STREAM):
+                    if (last_response.symbol == Symbol.ANSWER):
                         break
                 if func != None:
                     func(last_response)
