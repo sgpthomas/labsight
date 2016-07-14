@@ -28,7 +28,7 @@ def getMotors (config_folder = ""):
         print("Found " + port.device)
 
         ser = serial.Serial(port.device, timeout=2)
-        sleep(0.6)
+        sleep(1)
 
         # if we can establish communications with the port, get the id and then append motor object to motors
         if (establishComms(ser)):
@@ -45,7 +45,9 @@ def getMotors (config_folder = ""):
 
 def establishComms(port):
     # send initial message
-    response = sendMessage (Message(Symbol.GET, "version", "_"), port)
+    mess = Message(Symbol.GET, "version", "_")
+    print(mess)
+    response = sendMessage (mess, port)
 
     if response == None:
         return False
