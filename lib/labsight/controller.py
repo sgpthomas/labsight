@@ -20,21 +20,28 @@ def getAttachedMotorSerials():
     for port in list.comports():
         print("Found " + port.device)
 
-        ser = serial.Serial(port.device, timeout=2)
-        sleep(2)
+        # try to connect to serial
+        try:
+            ser = serial.Serial(port.device, timeout=2)
 
-        # if we can establish communications with the port, get the id and then append motor object to motors
-        if (establishComms(ser)):
+            # sleep for some time to give the arduino time to reset
+            sleep(2)
 
-            # get id from arduino
-            response = sendMessage(Message(Symbol.GET, "id", "_"), ser)
-            mid = response.data
+            # if we can establish communications with the port, get the id and then append motor object to motors
+            if (establishComms(ser)):
 
-            # create motor object and append it to the array
-            # motors.append(Motor(config_folder, ser, ID))
-            motors[mid] = ser
+                # get id from arduino
+                response = sendMessage(Message(Symbol.GET, Command.ID, Data.NIL), ser)
+                mid = response.data
 
-    # return motor array
+                # create motor object and append it to the array
+                # motors.append(Motor(config_folder, ser, ID))
+                motors[mid] = ser
+
+        except SerialException:
+            print("Unable to open '{}'. This port is probably already open.")
+
+    # return motor dictionary
     return motor_serials
 
 def createDefaultConfigDirectory():
@@ -49,7 +56,7 @@ def createDefaultConfigDirectory():
 
 def establishComms(ser):
     # send initial message
-    response = sendMessage (Message(Symbol.GET, Command.VERSION, "_"), ser)
+    response = sendMessage (Message(Symbol.GET, Command.VERSION, Data.NIL), ser)
 
     if response == None:
         return False
@@ -60,13 +67,3 @@ def establishComms(ser):
 
     # communications have not been established
     return False
-
-# motors = getMotors()
-# print(motors)
-
-# def func(response):
-#     print(response)
-
-# motors[0].sendMessage(Message(Symbol.SET, Command.STEP, "-200"), func)
-
-# print("done")

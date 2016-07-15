@@ -12,13 +12,17 @@ class Symbol:
     STREAM = ">"
     ERROR = "@"
 
-"""Commands"""
+""" Commands """
 class Command:
     ID = "id"
     STEP = "step"
     KILL = "kill"
     SPEED = "speed"
     VERSION = "version"
+
+""" Data """
+class Data:
+    NIL = "_"
 
 """ Message Structure """
 class Message:
