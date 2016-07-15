@@ -9,19 +9,12 @@ from labsight.protocol import Symbol, Command, Message, sendMessage
 version = "0.3"
 
 """ Talks to available ports and creates motor object if it finds anything """
-def getMotors (config_folder = ""):
+def getAttachedMotorSerials():
     # initialize return array
-    motors = []
+    motor_serials = {}
 
-    # if configuration folder is not given, then use default
-    if (config_folder == ""):
-        config_folder = os.path.expanduser(os.path.join("~", ".labsight", "motors"))
-        if (not os.path.isdir(config_folder)):
-            print("Default config folder doesn't exist. Generating a new one.")
-            os.makedirs(config_folder)
-
-    # print config directory
-    print("Using config directory: {}".format(config_folder))
+    # # print config directory
+    # print("Using config directory: {}".format(config_folder))
 
     # search through available ports
     for port in list.comports():
@@ -35,15 +28,24 @@ def getMotors (config_folder = ""):
 
             # get id from arduino
             response = sendMessage(Message(Symbol.GET, "id", "_"), ser)
-            ID = response.data
+            mid = response.data
 
             # create motor object and append it to the array
-            motors.append(Motor(config_folder, ser, ID))
+            # motors.append(Motor(config_folder, ser, ID))
+            motors[mid] = ser
 
     # return motor array
-    motors.append(Motor(config_folder, None, "test"))
-    print("yay")
-    return motors
+    return motor_serials
+
+def createDefaultConfigDirectory():
+    path = os.path.expanduser(os.path.join("~", ".labsight", "motors"))
+
+    # if configuration folder is not given, then use default
+    if (not os.path.isdir(path)):
+        print("Config Directory doesn't exist. Generating a new one.")
+        os.makedirs(path)
+
+    return path
 
 def establishComms(ser):
     # send initial message

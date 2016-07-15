@@ -31,7 +31,7 @@ class Motor(object):
         self.properties = yaml.load(archivo)
         archivo.close()
 
-    def loadExternal(self,path):
+    def loadExternal(self, path):
         # Load a config file from any given folder
         archivo = io.open(path)
         self.properties = yaml.load(archivo)
@@ -54,7 +54,11 @@ class Motor(object):
     def sendMessage(self, msg, func = None):
         # Allows this class to call the protocol.py function with reference to a motor
         # Also, automatically adds the motor's appropriate serial object
-        return sendMessage(msg, self.serial, func)
+        if self.serial != None:
+            return sendMessage(msg, self.serial, func)
+        else:
+            print("Serial for Motor '{}' is not open. Open it before sending a message.".format(self.id))
+            return None
 
     """The functions that allow you to run certain commands on the motor object:"""
 
@@ -99,7 +103,22 @@ class Motor(object):
         self.properties["kill"] = kill_status
         return self.properties["kill"]
 
-    def setProperty(self,new_property, value):
+    def setProperty(self, property_name, value):
         # allows something like the GUI to store it's own data in the YAML file
-        self.properties[new_property] = value
+        self.properties[property_name] = value
         self.saveProperties()
+
+    def getProperty(self, property_name):
+        # make sure that our local dictionary is up-to-date with the config file
+        self.loadProperties()
+        value = None
+
+        try:
+            value = self.properties[property_name]
+        except KeyError:
+            print("Property '%s' does not exist!" % property_name)
+
+        return value
+
+    def hasProperty(self, property_name):
+        return property_name in self.properties

@@ -1,9 +1,15 @@
 
 # imports
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, GObject
 
 # new motor view class
-class NewMotorView(Gtk.Dialog):
+class NewMotorDialog(Gtk.Dialog):
+
+    # create apply signal
+    __gsignals__ = {
+        "applied": (GObject.SIGNAL_RUN_FIRST, None, ())
+    }
+
     # constructor
     def __init__(self):
         # call super constructor
@@ -26,45 +32,44 @@ class NewMotorView(Gtk.Dialog):
         grid = Gtk.Grid()
         grid.props.margin = 6
         grid.props.column_spacing = 12
-        grid.props.width_request = 300
 
         # Display Name
         title = self.get_title_widget("Display Name:")
         description = self.get_description_widget("A name you can use to identify\nthis motor")
-        entry = Gtk.Entry()
-        entry.props.hexpand = True
+        self.name = Gtk.Entry()
+        self.name.props.hexpand = True
 
         grid.attach(title, 0, 0, 1, 1)
         grid.attach(description, 0, 1, 1, 1)
-        grid.attach(entry, 1, 0, 1, 2)
+        grid.attach(self.name, 1, 0, 1, 2)
 
         # Axis
         title = self.get_title_widget("Axis:")
         description = self.get_description_widget("Choose the axis this motor controls")
         axis_list = ["X", "Y", "Z"]
-        entry = Gtk.ComboBoxText()
-        entry.props.hexpand = True
-        entry.props.valign = Gtk.Align.CENTER
+        self.axis_combo = Gtk.ComboBoxText()
+        self.axis_combo.props.hexpand = True
+        self.axis_combo.props.valign = Gtk.Align.CENTER
         for axis in axis_list:
-            entry.append_text(axis)
+            self.axis_combo.append_text(axis)
 
         grid.attach(title, 0, 2, 1, 1)
         grid.attach(description, 0, 3, 1, 1)
-        grid.attach(entry, 1, 2, 1, 2)
+        grid.attach(self.axis_combo, 1, 2, 1, 2)
 
         # Type
         title = self.get_title_widget("Type:")
         description = self.get_description_widget("Decides whether to use\nrotational or linear coordinates")
         type_list = ["Linear", "Rotational"]
-        entry = Gtk.ComboBoxText()
-        entry.props.hexpand = True
-        entry.props.valign = Gtk.Align.CENTER
+        self.type_combo = Gtk.ComboBoxText()
+        self.type_combo.props.hexpand = True
+        self.type_combo.props.valign = Gtk.Align.CENTER
         for t in type_list:
-            entry.append_text(t)
+            self.type_combo.append_text(t)
 
         grid.attach(title, 0, 4, 1, 1)
         grid.attach(description, 0, 5, 1, 1)
-        grid.attach(entry, 1, 4, 1, 2)
+        grid.attach(self.type_combo, 1, 4, 1, 2)
 
         # save configuration
         # self.save_button = Gtk.Button().new_with_label("Save Configuration")
@@ -101,6 +106,8 @@ class NewMotorView(Gtk.Dialog):
         if param == Gtk.ResponseType.CLOSE:
             self.destroy()
 
-        elif param == Gtk.ResponseType.APPLY:
-            print("apply")
-        
+        if param == Gtk.ResponseType.APPLY:
+            self.display_name = self.name.props.text
+            self.axis_name = self.axis_combo.get_active_text()
+            self.type_name = self.type_combo.get_active_text()
+            self.emit("applied")

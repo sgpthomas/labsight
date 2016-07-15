@@ -3,8 +3,12 @@
 from gi.repository import Gtk, GObject
 from labsight.motor import Motor
 from labsight import controller
-from control.views.NewMotorView import NewMotorView
+from control.views.NewMotorDialog import NewMotorDialog
+import control.config as config
 from multiprocessing import Pool
+import os
+
+# from time import sleep
 
 # Motor List Class
 class MotorList(Gtk.Box):
@@ -72,17 +76,38 @@ class MotorList(Gtk.Box):
         self.stack.set_visible_child_name("loading")
         self.spinner.start()
 
-        self.pool.apply_async(controller.getMotors, (), callback=self.end_load)
+        self.pool.apply_async(do_load, (), callback=self.end_load)
 
     def end_load(self, result):
         self.spinner.stop()
         self.stack.set_visible_child_name("list")
 
-        print(result)
-        for motor in result:
-            self.list_box.insert(MotorListChild(motor), -1)
+        for m in result:
+            self.list_box.insert(MotorListChild(m), -1)
 
         self.emit("done-loading")
+
+# load class needs to be outside of a class
+def do_load():
+    motor_list = []
+
+    # get and open serials of connected motors
+    serials = controller.getAttachedMotorSerials()
+
+    # search through configuration directory and find configuration files
+    file_list = os.listdir(config.MOTOR_CONFIG_DIR)
+    for f in file_list:
+        # is file a yml file?
+        (mid, ext) = f.split(".")
+        if ext == "yml" or ext == "yaml":
+            if mid in serials:
+                m = Motor(config.MOTOR_CONFIG_DIR, serials[mid], mid)
+            else:
+                m = Motor(config.MOTOR_CONFIG_DIR, None, mid)
+
+            motor_list.append(m)
+
+    return motor_list
 
 class MotorListChild(Gtk.ListBoxRow):
 
@@ -100,43 +125,128 @@ class MotorListChild(Gtk.ListBoxRow):
     def __init__(self, motor):
         Gtk.ListBoxRow.__init__(self)
 
+        # make motor available throughout the class
+        self.motor = motor
+
+        # set motor properties
+        if not self.motor.hasProperty("configured"):
+            self.motor.setProperty("configured", False)
+
+        # if motor is not already configured, make sure all of our properties exist
+        if self.motor.getProperty("configured") == False:
+            self.motor.setProperty("display-name", "Motor")
+            self.motor.setProperty("axis", None)
+            self.motor.setProperty("type", None)
+
         # build ui
-        self.build_ui()
+        self.update_ui()
 
-        # show all
-        self.show_all()
+    def clean_ui(self):
+        for child in self.get_children():
+            child.destroy()
 
-    def build_ui(self):
+    def update_ui(self):
         # add class to self
         self.get_style_context().add_class("motor-list-child")
         self.props.margin = 6
 
-        # create grid
-        self.grid = Gtk.Grid()
-        self.grid.props.expand = True
-        self.grid.props.halign = Gtk.Align.CENTER
-        self.grid.props.column_spacing = 6
+        # box
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 
-        # create motor detected
-        self.motor_detected_label = Gtk.Label("New Motor Detected")
-        self.motor_detected_label.props.wrap = True
-        self.motor_detected_label.props.expand = True
-        self.motor_detected_label.props.valign = Gtk.Align.CENTER
-        self.motor_detected_label.props.halign = Gtk.Align.START
-        self.motor_detected_label.props.justify = Gtk.Justification.CENTER
-        self.motor_detected_label.get_style_context().add_class("motor-detected")
+        # create info grid
+        info_grid = Gtk.Grid()
+        info_grid.props.expand = True
+        info_grid.props.halign = Gtk.Align.START
+        info_grid.props.valign = Gtk.Align.CENTER
+        info_grid.props.column_spacing = 6
+        info_grid.props.row_spacing = 3
 
-        # configure button
-        self.configure_button = Gtk.Button().new_with_label("Configure")
-        self.props.valign = Gtk.Align.CENTER
-        self.configure_button.connect("clicked", self.configure)
+        # create button grid
+        button_grid = Gtk.Grid()
+        button_grid.props.expand = True
+        button_grid.props.halign = Gtk.Align.END
+        button_grid.props.valign = Gtk.Align.CENTER
+        button_grid.props.column_spacing = 6
+        button_grid.props.row_spacing = 6
 
-        # attach things to the grid
-        self.grid.attach (self.motor_detected_label, 0, 0, 1, 3)
-        self.grid.attach (self.configure_button, 1, 1, 1, 1)
+        # clean ui
+        self.clean_ui()
 
-        self.add(self.grid)
+        if self.motor.getProperty("configured") == True:
+            # info labels
+            display_label = Gtk.Label(self.motor.getProperty("display-name"))
+            display_label.props.wrap = True
+            display_label.props.halign = Gtk.Align.START
+            display_label.get_style_context().add_class("motor-detected")
+
+            axis_label = Gtk.Label("<b>Axis:</b> {}".format(self.motor.getProperty("axis")))
+            axis_label.props.use_markup = True
+            axis_label.props.halign = Gtk.Align.START
+            axis_label.props.wrap = True
+
+            type_label = Gtk.Label("<b>Type:</b> {}".format(self.motor.getProperty("type")))
+            type_label.props.use_markup = True
+            type_label.props.halign = Gtk.Align.START
+            type_label.props.wrap = True
+
+            # configure button
+            control_button = Gtk.Button().new_with_label("Control")
+            configure_button = Gtk.Button().new_with_label("Configure")
+            configure_button.connect("clicked", self.configure)
+            # self.
+
+            # attach things to the grid
+            info_grid.attach(display_label, 0, 0, 1, 1)
+            info_grid.attach(axis_label, 0, 1, 1, 1)
+            info_grid.attach(type_label, 0, 2, 1, 1)
+
+            button_grid.attach(control_button, 0, 0, 1, 1)
+            button_grid.attach(configure_button, 0, 1, 1, 1)
+
+        else:
+            # create motor detected
+            motor_detected_label = Gtk.Label("New Motor Detected")
+            motor_detected_label.props.wrap = True
+            motor_detected_label.props.expand = True
+            motor_detected_label.get_style_context().add_class("motor-detected")
+
+            # configure button
+            configure_button = Gtk.Button().new_with_label("Configure")
+            configure_button.connect("clicked", self.configure)
+
+            # attach things to the grid
+            info_grid.attach (motor_detected_label, 0, 0, 1, 1)
+            button_grid.attach (configure_button, 0, 0, 1, 1)
+
+        # add grids to box
+        box.add(info_grid)
+        box.add(button_grid)
+
+        # add resulting grid to self
+        self.add(box)
+
+        # show all
+        self.show_all()
 
     def configure(self, event, param=None):
-        dialog = NewMotorView()
+        dialog = NewMotorDialog()
+
+        # define method for applying changes from dialog
+        def apply_configurations(event, param=None):
+            # save configurations
+            self.motor.setProperty("configured", True)
+            self.motor.setProperty("display-name", dialog.display_name)
+            self.motor.setProperty("axis", dialog.axis_name)
+            self.motor.setProperty("type", dialog.type_name)
+
+            # destroy dialog
+            dialog.destroy()
+
+            # update self
+            self.update_ui()
+
+        # connect to applied signal
+        dialog.connect("applied", apply_configurations)
+
+        # start the dialog
         dialog.run()
