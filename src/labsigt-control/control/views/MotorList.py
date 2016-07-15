@@ -1,21 +1,47 @@
 
 # imports
-from gi.repository import Gtk
+from gi.repository import Gtk, GObject
 from labsight.motor import Motor
+from labsight import controller
 from control.views.NewMotorView import NewMotorView
+from multiprocessing import Pool
 
 # Motor List Class
 class MotorList(Gtk.Box):
+
+    # stack
+    stack = None
 
     # widgets
     list_box = None
 
     scrolled_window = None
 
+    # setup signals
+    __gsignals__ = {
+        "done-loading": (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ())
+    }
+
     # constructor
     def __init__(self):
         # initiate grid
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL)
+
+        # create stack
+        self.stack = Gtk.Stack()
+
+        # create spinner
+        grid = Gtk.Grid()
+        grid.props.expand = True
+        grid.props.halign = Gtk.Align.CENTER
+        grid.props.valign = Gtk.Align.CENTER
+        self.spinner = Gtk.Spinner()
+        self.spinner.set_size_request(32, 32)
+        grid.attach(self.spinner, 0, 0, 1, 1)
+        label = Gtk.Label("Scanning Ports for Connected Motors")
+        label.get_style_context().add_class("new-motor-title")
+        grid.attach(label, 0, 1, 1, 1)
+        self.stack.add_named(grid, "loading")
 
         # create list box
         self.create_list_box()
@@ -24,8 +50,13 @@ class MotorList(Gtk.Box):
         self.scrolled_window = Gtk.ScrolledWindow()
         self.scrolled_window.add(self.list_box)
 
+        self.stack.add_named(self.scrolled_window, "list")
+
         # add to this
-        self.add(self.scrolled_window)
+        self.add(self.stack)
+
+        # create pool
+        self.pool = Pool(processes=1)
 
         self.show_all()
 
@@ -37,8 +68,20 @@ class MotorList(Gtk.Box):
         # add css class to this for styling
         self.list_box.get_style_context().add_class("motor-list")
 
-        self.list_box.prepend(MotorListChild("hi"))
-        self.list_box.prepend(MotorListChild("bye"))
+    def start_load(self):
+        self.stack.set_visible_child_name("loading")
+        self.spinner.start()
+
+        self.pool.apply_async(controller.getMotors, (), callback=self.end_load)
+
+    def end_load(self, result):
+        self.spinner.stop()
+        self.stack.set_visible_child_name("list")
+
+        for motor in result:
+            self.list_box.insert(MotorListChild(motor), -1)
+
+        self.emit("done-loading")
 
 class MotorListChild(Gtk.ListBoxRow):
 

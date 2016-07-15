@@ -57,14 +57,12 @@ def establishComms(ser):
     # communications have not been established
     return False
 
-"""Testing"""
+# motors = getMotors()
+# print(motors)
 
-motors = getMotors()
-print(motors)
+# def func(response):
+#     print(response)
 
-def func(response):
-    print(response)
+# motors[0].sendMessage(Message(Symbol.SET, Command.STEP, "-200"), func)
 
-motors[0].sendMessage(Message(Symbol.SET, Command.STEP, "-200"), func)
-
-print("done")
+# print("done")

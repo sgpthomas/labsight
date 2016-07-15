@@ -30,6 +30,9 @@ class MainWindow(Gtk.Window):
         # show all the things
         self.show_all()
 
+        # refresh motors
+        self.refresh(None)
+
     def build_ui(self):
         # initiate stack
         self.stack = Gtk.Stack()
@@ -46,6 +49,7 @@ class MainWindow(Gtk.Window):
     def connect_signals(self):
         self.connect("delete-event", self.destroy) # connect the close button to destroying the window
         self.welcome.connect("refresh-motor-list", self.refresh)
+        self.motor_list.connect("done-loading", self.done_loading)
 
     # signal functions
     def destroy(self, event, param=None):
@@ -53,3 +57,8 @@ class MainWindow(Gtk.Window):
 
     def refresh(self, event, param=None):
         self.stack.set_visible_child_name("motor-list")
+        self.motor_list.start_load()
+
+    def done_loading(self, event, param=None):
+        if len(self.motor_list.list_box.get_children()) < 1:
+            self.stack.set_visible_child_name("welcome")
