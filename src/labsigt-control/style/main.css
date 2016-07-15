@@ -25,6 +25,11 @@
     transition: all 150ms ease-in-out;
 }
 
+.motor-list-child.disconnected {
+    background-color: @insensitive_bg_color;
+    color: @insensitive_color;
+}
+
 GtkLabel.motor-detected {
     font: Open Sans 12px;
 }

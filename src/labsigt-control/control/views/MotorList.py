@@ -190,7 +190,11 @@ class MotorListChild(Gtk.ListBoxRow):
             type_label.props.wrap = True
 
             # configure button
-            control_button = Gtk.Button().new_with_label("Control")
+            if self.motor.serial == None:
+                control_button = Gtk.Button().new_with_label("Connect")
+            else:
+                control_button = Gtk.Button().new_with_label("Control")
+                
             configure_button = Gtk.Button().new_with_label("Configure")
             configure_button.connect("clicked", self.configure)
             # self.
@@ -221,6 +225,9 @@ class MotorListChild(Gtk.ListBoxRow):
         # add grids to box
         box.add(info_grid)
         box.add(button_grid)
+
+        if self.motor.serial == None:
+            self.get_style_context().add_class("disconnected")
 
         # add resulting grid to self
         self.add(box)
