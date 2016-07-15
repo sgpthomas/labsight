@@ -45,11 +45,11 @@ class MainWindow(Gtk.Window):
 
     def connect_signals(self):
         self.connect("delete-event", self.destroy) # connect the close button to destroying the window
-        self.welcome.connect("refresh-motor-list", self.new_motor)
+        self.welcome.connect("refresh-motor-list", self.refresh)
 
     # signal functions
     def destroy(self, event, param=None):
        Gtk.main_quit() 
 
-    def new_motor(self, event, param=None):
+    def refresh(self, event, param=None):
         self.stack.set_visible_child_name("motor-list")

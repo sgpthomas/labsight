@@ -2,6 +2,7 @@
 # imports
 from gi.repository import Gtk
 from labsight.motor import Motor
+from control.views.NewMotorView import NewMotorView
 
 # Motor List Class
 class MotorList(Gtk.Box):
@@ -84,9 +85,14 @@ class MotorListChild(Gtk.ListBoxRow):
         # configure button
         self.configure_button = Gtk.Button().new_with_label("Configure")
         self.props.valign = Gtk.Align.CENTER
+        self.configure_button.connect("clicked", self.configure)
 
         # attach things to the grid
         self.grid.attach (self.motor_detected_label, 0, 0, 1, 3)
         self.grid.attach (self.configure_button, 1, 1, 1, 1)
 
         self.add(self.grid)
+
+    def configure(self, event, param=None):
+        dialog = NewMotorView()
+        dialog.run()
