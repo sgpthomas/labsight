@@ -11,7 +11,7 @@ class NewMotorDialog(Gtk.Dialog):
     }
 
     # constructor
-    def __init__(self):
+    def __init__(self, dname=None, axis=None, mtype=None):
         # call super constructor
         Gtk.Box.__init__(self)
         # self.props.border_width = 24
@@ -20,14 +20,14 @@ class NewMotorDialog(Gtk.Dialog):
         self.set_modal(True)
 
         # build_ui
-        self.build_ui()
+        self.build_ui(dname, axis, mtype)
 
         self.connect("response", self.on_response)
 
         # show all
         self.show_all()
 
-    def build_ui(self):
+    def build_ui(self, dname, axis, mtype):
         # grid
         grid = Gtk.Grid()
         grid.props.margin = 6
@@ -37,6 +37,7 @@ class NewMotorDialog(Gtk.Dialog):
         title = self.get_title_widget("Display Name:")
         description = self.get_description_widget("A name you can use to identify\nthis motor")
         self.name = Gtk.Entry()
+        self.name.props.text = dname
         self.name.props.hexpand = True
 
         grid.attach(title, 0, 0, 1, 1)
@@ -50,8 +51,10 @@ class NewMotorDialog(Gtk.Dialog):
         self.axis_combo = Gtk.ComboBoxText()
         self.axis_combo.props.hexpand = True
         self.axis_combo.props.valign = Gtk.Align.CENTER
-        for axis in axis_list:
-            self.axis_combo.append_text(axis)
+        for ax in axis_list:
+            self.axis_combo.append_text(ax)
+        if axis in axis_list:
+            self.axis_combo.props.active = axis_list.index(axis)
 
         grid.attach(title, 0, 2, 1, 1)
         grid.attach(description, 0, 3, 1, 1)
@@ -66,6 +69,8 @@ class NewMotorDialog(Gtk.Dialog):
         self.type_combo.props.valign = Gtk.Align.CENTER
         for t in type_list:
             self.type_combo.append_text(t)
+        if mtype in type_list:
+            self.type_combo.props.active = type_list.index(mtype)
 
         grid.attach(title, 0, 4, 1, 1)
         grid.attach(description, 0, 5, 1, 1)

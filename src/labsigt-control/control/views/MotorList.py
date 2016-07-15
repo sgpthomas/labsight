@@ -194,7 +194,7 @@ class MotorListChild(Gtk.ListBoxRow):
                 control_button = Gtk.Button().new_with_label("Connect")
             else:
                 control_button = Gtk.Button().new_with_label("Control")
-                
+
             configure_button = Gtk.Button().new_with_label("Configure")
             configure_button.connect("clicked", self.configure)
             # self.
@@ -207,6 +207,10 @@ class MotorListChild(Gtk.ListBoxRow):
             button_grid.attach(control_button, 0, 0, 1, 1)
             button_grid.attach(configure_button, 0, 1, 1, 1)
 
+            # if there is no serial, add disconnected class
+            if self.motor.serial == None:
+                self.get_style_context().add_class("disconnected")
+
         else:
             # create motor detected
             motor_detected_label = Gtk.Label("New Motor Detected")
@@ -214,20 +218,24 @@ class MotorListChild(Gtk.ListBoxRow):
             motor_detected_label.props.expand = True
             motor_detected_label.get_style_context().add_class("motor-detected")
 
+            motor_id = Gtk.Label("<b>ID:</b> {}".format(self.motor.getProperty("id")))
+            motor_id.props.use_markup = True
+            motor_id.props.halign = Gtk.Align.START
+            motor_id.props.wrap = True
+
             # configure button
             configure_button = Gtk.Button().new_with_label("Configure")
             configure_button.connect("clicked", self.configure)
 
             # attach things to the grid
-            info_grid.attach (motor_detected_label, 0, 0, 1, 1)
-            button_grid.attach (configure_button, 0, 0, 1, 1)
+            info_grid.attach(motor_detected_label, 0, 0, 1, 1)
+            info_grid.attach(motor_id, 0, 1, 1, 1)
+
+            button_grid.attach(configure_button, 0, 0, 1, 1)
 
         # add grids to box
         box.add(info_grid)
         box.add(button_grid)
-
-        if self.motor.serial == None:
-            self.get_style_context().add_class("disconnected")
 
         # add resulting grid to self
         self.add(box)
@@ -236,7 +244,12 @@ class MotorListChild(Gtk.ListBoxRow):
         self.show_all()
 
     def configure(self, event, param=None):
-        dialog = NewMotorDialog()
+        if self.motor.getProperty("configured") == True:
+            dialog = NewMotorDialog(dname=self.motor.getProperty("display-name"),
+                                    axis=self.motor.getProperty("axis"),
+                                    mtype=self.motor.getProperty("type"))
+        else:
+            dialog = NewMotorDialog()
 
         # define method for applying changes from dialog
         def apply_configurations(event, param=None):
