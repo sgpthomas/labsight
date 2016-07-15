@@ -78,6 +78,7 @@ class MotorList(Gtk.Box):
         self.spinner.stop()
         self.stack.set_visible_child_name("list")
 
+        print(result)
         for motor in result:
             self.list_box.insert(MotorListChild(motor), -1)
 

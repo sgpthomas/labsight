@@ -14,8 +14,8 @@ class Motor(object):
         self.id = id
         self.properties = {}
         self.filename = str(self.id) + ".yml"
-        self.path = os.path.join(config_folder,self.filename)
-        self.defaults = {"id":self.id, "step":0, "kill":self.getKill()}
+        self.path = os.path.join(config_folder, self.filename)
+        self.defaults = {"id":self.id}
         file_list = os.listdir(config_folder)
         if self.filename in file_list:
             self.loadProperties()
@@ -39,6 +39,7 @@ class Motor(object):
 
     def newProperties(self):
         # Makes a new YAML file in the config
+        print("No config file found. Generating a new one.")
         new_file = io.open(self.path, "w")
         yaml.dump(self.defaults, new_file, default_flow_style = False)
         new_file.close()

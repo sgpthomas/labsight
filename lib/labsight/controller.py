@@ -41,6 +41,8 @@ def getMotors (config_folder = ""):
             motors.append(Motor(config_folder, ser, ID))
 
     # return motor array
+    motors.append(Motor(config_folder, None, "test"))
+    print("yay")
     return motors
 
 def establishComms(ser):
