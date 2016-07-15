@@ -182,12 +182,18 @@ class MotorListChild(Gtk.ListBoxRow):
             axis_label = Gtk.Label("<b>Axis:</b> {}".format(self.motor.getProperty("axis")))
             axis_label.props.use_markup = True
             axis_label.props.halign = Gtk.Align.START
-            axis_label.props.wrap = True
 
             type_label = Gtk.Label("<b>Type:</b> {}".format(self.motor.getProperty("type")))
             type_label.props.use_markup = True
             type_label.props.halign = Gtk.Align.START
-            type_label.props.wrap = True
+
+            status_label = Gtk.Label("<b>Status:</b> {}".format("Disconnected"))
+            status_label.props.use_markup = True
+            status_label.props.halign = Gtk.Align.START
+
+            id_label = Gtk.Label("<b>ID:</b> {}".format(self.motor.getProperty("id")))
+            id_label.props.use_markup = True
+            id_label.props.halign = Gtk.Align.START
 
             # configure button
             if self.motor.serial == None:
@@ -197,12 +203,13 @@ class MotorListChild(Gtk.ListBoxRow):
 
             configure_button = Gtk.Button().new_with_label("Configure")
             configure_button.connect("clicked", self.configure)
-            # self.
 
             # attach things to the grid
             info_grid.attach(display_label, 0, 0, 1, 1)
             info_grid.attach(axis_label, 0, 1, 1, 1)
             info_grid.attach(type_label, 0, 2, 1, 1)
+            info_grid.attach(status_label, 1, 1, 1, 1)
+            info_grid.attach(id_label, 1, 2, 1, 1)
 
             button_grid.attach(control_button, 0, 0, 1, 1)
             button_grid.attach(configure_button, 0, 1, 1, 1)
