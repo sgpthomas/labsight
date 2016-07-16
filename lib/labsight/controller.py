@@ -16,7 +16,7 @@ def getAttachedMotorSerials():
     # initialize return array
     motor_serials = {}
 
-    createDefaultConfigDirectory()
+    config_folder = createDefaultConfigDirectory()
     # # print config directory
     # print("Using config directory: {}".format(config_folder))
 

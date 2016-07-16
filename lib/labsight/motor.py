@@ -15,7 +15,7 @@ class Motor(object):
         self.properties = {}
         self.filename = str(self.id) + ".yml"
         self.path = os.path.join(config_folder, self.filename)
-        self.defaults = {"id":self.id}
+        self.defaults = {"id":self.id, "step":0}
         file_list = os.listdir(config_folder)
         if self.filename in file_list:
             self.loadProperties()
@@ -39,7 +39,11 @@ class Motor(object):
 
     def newProperties(self):
         # Makes a new YAML file in the config
-        print("No config file found. Generating a new one.")
+        # print("No config file found. Generating a new one.")
+        try:
+            os.remove(self.path)
+        except OSError:
+            pass
         new_file = io.open(self.path, "w")
         yaml.dump(self.defaults, new_file, default_flow_style = False)
         new_file.close()
@@ -80,11 +84,12 @@ class Motor(object):
         # Line on updating kill may be wrong, it depends on how the Arduino handles its release() function
         move_msg = Message(Symbol.SET, Command.STEP, str(steps))
         confirm = self.sendMessage(move_msg, self.updateDistance)
-        self.getKill()
+        # self.getKill()
         return confirm
     def updateDistance(self, response):
         # This function allows for realtime receiving and updating of the traveled
-        self.properties["step"] += int(distance[0])
+        self.properties["step"] += int(response.data)
+        print(self.properties["step"])
 
     def getStep(self):
         # Tells you the current position
