@@ -60,6 +60,9 @@ def sendMessage(msg, ser, func=None):
             raise SerialException("Arduino responded with incorrect command. {} instead of {}".format(response.command, msg.command))
             return None
 
+        if response.symbol == Symbol.ERROR:
+            raise Exception("The Arduino sent the error {}".format(response))
+
         # if response opens a stream, pass the serial instance to a given function
         if response.symbol == Symbol.STREAM:
             response = [response]

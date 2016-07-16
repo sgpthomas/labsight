@@ -23,7 +23,7 @@ class Motor(object):
             self.newProperties()
 
     def __repr__(self):
-        return "Motor '{}' on port {}".format(self.id, self.serial.port)
+        return "Motor(id={}, port={})".format(self.id, self.serial.port)
 
     def loadProperties(self):
         # Load the appropriate YAML config file from the config folder
