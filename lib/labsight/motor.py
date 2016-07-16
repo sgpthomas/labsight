@@ -23,7 +23,7 @@ class Motor(object):
             self.newProperties()
 
     def __repr__(self):
-        return "Motor('{}', {}, {})".format(self.config_folder, self.serial, self.id)
+        return "Motor(id={}, port={})".format(self.id, self.serial.port)
 
     def loadProperties(self):
         # Load the appropriate YAML config file from the config folder
@@ -57,7 +57,7 @@ class Motor(object):
         if self.serial != None:
             return sendMessage(msg, self.serial, func)
         else:
-            print("Serial for Motor '{}' is not open. Open it before sending a message.".format(self.id))
+            raise SerialException("Serial for Motor '{}' is not open. Open it before sending a message.".format(self.id))
             return None
 
     """The functions that allow you to run certain commands on the motor object:"""
@@ -96,12 +96,12 @@ class Motor(object):
         ret = self.sendMessage(msg)
         self.getKill
 
-    def getKill(self):
-        # Updates this object's kill property according to what the Arduino tells it
-        get_kill_msg = Message(Symbol.GET, Command.KILL, "_")
-        kill_status = self.sendMessage(get_kill_msg).data
-        self.properties["kill"] = kill_status
-        return self.properties["kill"]
+    # def getKill(self):
+    #     # Updates this object's kill property according to what the Arduino tells it
+    #     get_kill_msg = Message(Symbol.GET, Command.KILL, "_")
+    #     kill_status = self.sendMessage(get_kill_msg).data
+    #     self.properties["kill"] = kill_status
+    #     return self.properties["kill"]
 
     def setProperty(self, property_name, value):
         # allows something like the GUI to store it's own data in the YAML file

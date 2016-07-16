@@ -49,7 +49,7 @@ def sendMessage(msg, ser, func=None):
 
         # make sure that there are 3 parts
         if len(response) != 3:
-            print("Arduino response was not proper length, but was {}".format(response))
+            raise Exception("No compatible device is connected to this port")
             return None
 
         # format response array into a Message object
@@ -57,8 +57,11 @@ def sendMessage(msg, ser, func=None):
 
         # make sure that response has the same command as initial message
         if response.command != msg.command:
-            print("Arduino responded with incorrect command. {} instead of {}".format(response.command, msg.command))
+            raise SerialException("Arduino responded with incorrect command. {} instead of {}".format(response.command, msg.command))
             return None
+
+        if response.symbol == Symbol.ERROR:
+            raise Exception("The Arduino sent the error {}".format(response))
 
         # if response opens a stream, pass the serial instance to a given function
         if response.symbol == Symbol.STREAM:

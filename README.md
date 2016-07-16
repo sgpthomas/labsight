@@ -74,10 +74,8 @@ Any planned functions can be added to these files as is seen fit
   - Questions, like a get function (**?**)
   - Commands, like a set function (**!**)
 * **Symbols Used by Arduino**
-  - Responses to Questions (**$**) - Get function Return
-  - Confirmation of commands (**#**) - Set Function Confirmation
+  - Responses from Arduino (**$**)
   - Stream (**>**)
-  - End stream (**/**)
   - Errors (**@**)
 * **Commands**
   - step
