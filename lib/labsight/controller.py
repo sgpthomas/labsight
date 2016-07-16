@@ -4,21 +4,25 @@ from serial.serialutil import SerialException
 import os
 from time import sleep
 from labsight.motor import Motor
-from labsight.protocol import Symbol, Command, Message, sendMessage
+from labsight.protocol import Symbol, Command, Data, Message, sendMessage
 
 version = "0.3"
+
+# This is outside of a function so that it is accessible to every function here, as it needs to be
+motor_objects = {}
 
 """ Talks to available ports and creates motor object if it finds anything """
 def getAttachedMotorSerials():
     # initialize return array
     motor_serials = {}
 
+    createDefaultConfigDirectory()
     # # print config directory
     # print("Using config directory: {}".format(config_folder))
 
     # search through available ports
     for port in list.comports():
-        print("Found " + port.device)
+        # print("Found " + port.device)
 
         # try to connect to serial
         try:
@@ -35,8 +39,8 @@ def getAttachedMotorSerials():
                 mid = response.data
 
                 # create motor object and append it to the array
-                # motors.append(Motor(config_folder, ser, ID))
-                motors[mid] = ser
+                motor_objects[mid] = (Motor(config_folder, ser, mid))
+                motor_serials[mid] = ser
 
         except SerialException:
             print("Unable to open '{}'. This port is probably already open.")
@@ -49,16 +53,16 @@ def createDefaultConfigDirectory():
 
     # if configuration folder is not given, then use default
     if (not os.path.isdir(path)):
-        print("Config Directory doesn't exist. Generating a new one.")
+        # print("Config Directory doesn't exist. Generating a new one.")
         os.makedirs(path)
 
     return path
 
 def establishComms(ser):
     # send initial message
-    response = sendMessage (Message(Symbol.GET, Command.VERSION, Data.NIL), ser)
-
-    if response == None:
+    try:
+        response = sendMessage (Message(Symbol.GET, Command.VERSION, Data.NIL), ser)
+    except:
         return False
 
     # check to make sure that returned version matches ours
@@ -67,3 +71,7 @@ def establishComms(ser):
 
     # communications have not been established
     return False
+
+def motors():
+    serials = getAttachedMotorSerials()
+    return motor_objects

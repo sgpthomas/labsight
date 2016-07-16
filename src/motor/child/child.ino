@@ -61,6 +61,8 @@ struct dat {
 
 dat Data;
 
+bool erred = false;
+
 String readID() {
   char value;
   int address = 0;
@@ -177,13 +179,13 @@ String setID(String new_id) {
   return id;
 }
 
-String setVersion(String data) {
-  version_number = data;
-  return version_number;
-}
-
 // The below function supports only relative motion
 String setStep(String distance, uint8_t style = default_style) {
+  if (distance.toInt() % 1 != 0) {
+    erred = true;
+    return distance;
+  }
+  
   stream = true;
   uint8_t dir = FORWARD;
   if (distance.toInt() < 0) {
@@ -257,6 +259,10 @@ void receivedMessage(String symbol, String command, String data) {
     } else {
       respond_symbol = Symbol.ERROR;
     }
+  }
+  
+  if (erred == true) {
+    respond_symbol = Symbol.ERROR;
   }
 
   Serial.println(join(respond_symbol, respond_command, respond_data));
