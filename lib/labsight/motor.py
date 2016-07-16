@@ -1,7 +1,7 @@
 import os
 import io
 import yaml
-from labsight.protocol import Symbol, Command, Message, sendMessage
+from labsight.protocol import Symbol, Command, Data, Message, sendMessage
 
 class Motor(object):
 
@@ -15,7 +15,7 @@ class Motor(object):
         self.properties = {}
         self.filename = str(self.id) + ".yml"
         self.path = os.path.join(config_folder, self.filename)
-        self.defaults = {"id":self.id, "step":0}
+        self.defaults = {"id":self.id}
         file_list = os.listdir(config_folder)
         if self.filename in file_list:
             self.loadProperties()
@@ -23,7 +23,10 @@ class Motor(object):
             self.newProperties()
 
     def __repr__(self):
-        return "Motor(id={}, port={})".format(self.id, self.serial.port)
+        if self.serial != None:
+            return "Motor(id={}, port={})".format(self.id, self.serial.port)
+        else:
+            return "Motor(id={}, port={})".format(self.id, None)
 
     def loadProperties(self):
         # Load the appropriate YAML config file from the config folder
@@ -68,7 +71,7 @@ class Motor(object):
 
     def getID(self):
         # Get's the id from the Arduino, and updates this class' values as is appropriate
-        msg = Message(Symbol.GET, Command.ID, "_")
+        msg = Message(Symbol.GET, Command.ID, Data.NIL)
         self.id = self.sendMessage(msg).data
         self.properties["id"] = self.id
         return self.sendMessage(msg)
@@ -79,17 +82,20 @@ class Motor(object):
         self.properties["id"] = new_id
         return self.sendMessage(msg)
 
-    def setStep(self, steps):
+    def setStep(self, steps, function = None):
+        if function == None:
+            function = self.updateDistance
         # This is essentially a move function, as you are setting the motor's position (step) in the world
         # Line on updating kill may be wrong, it depends on how the Arduino handles its release() function
         move_msg = Message(Symbol.SET, Command.STEP, str(steps))
-        confirm = self.sendMessage(move_msg, self.updateDistance)
+        confirm = self.sendMessage(move_msg, function)
         # self.getKill()
-        return confirm
+        return str(confirm)
     def updateDistance(self, response):
         # This function allows for realtime receiving and updating of the traveled
+        # It is the defualt function passed for streaming
         self.properties["step"] += int(response.data)
-        print(self.properties["step"])
+        print(str(response))
 
     def getStep(self):
         # Tells you the current position
@@ -97,7 +103,7 @@ class Motor(object):
 
     def setKill(self):
         # This kills the motor, calling its release() function
-        msg = controller.Message(Symbol.SET, Command.KILL, "_")
+        msg = controller.Message(Symbol.SET, Command.KILL, Data.NIL)
         ret = self.sendMessage(msg)
         self.getKill
 
