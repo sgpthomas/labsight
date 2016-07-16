@@ -1,7 +1,7 @@
 import os
 import io
 import yaml
-from labsight.protocol import Symbol, Command, Message, sendMessage
+from labsight.protocol import Symbol, Command, Data, Message, sendMessage
 
 class Motor(object):
 
@@ -23,7 +23,10 @@ class Motor(object):
             self.newProperties()
 
     def __repr__(self):
-        return "Motor(id={}, port={})".format(self.id, self.serial.port)
+        if self.serial != None:
+            return "Motor(id={}, port={})".format(self.id, self.serial.port)
+        else:
+            return "Motor(id={}, port={})".format(self.id, None)
 
     def loadProperties(self):
         # Load the appropriate YAML config file from the config folder
@@ -64,7 +67,7 @@ class Motor(object):
 
     def getID(self):
         # Get's the id from the Arduino, and updates this class' values as is appropriate
-        msg = Message(Symbol.GET, Command.ID, "_")
+        msg = Message(Symbol.GET, Command.ID, Data.NIL)
         self.id = self.sendMessage(msg).data
         self.properties["id"] = self.id
         return self.sendMessage(msg)
@@ -84,7 +87,8 @@ class Motor(object):
         return confirm
     def updateDistance(self, response):
         # This function allows for realtime receiving and updating of the traveled
-        self.properties["step"] += int(distance[0])
+        # self.properties["step"] += int(distance[0])
+        print(response)
 
     def getStep(self):
         # Tells you the current position
@@ -92,7 +96,7 @@ class Motor(object):
 
     def setKill(self):
         # This kills the motor, calling its release() function
-        msg = controller.Message(Symbol.SET, Command.KILL, "_")
+        msg = controller.Message(Symbol.SET, Command.KILL, Data.NIL)
         ret = self.sendMessage(msg)
         self.getKill
 

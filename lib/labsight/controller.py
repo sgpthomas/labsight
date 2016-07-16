@@ -12,17 +12,17 @@ version = "0.3"
 motor_objects = {}
 
 """ Talks to available ports and creates motor object if it finds anything """
-def getAttachedMotorSerials():
+def getAttachedSerials(config_folder):
     # initialize return array
     motor_serials = {}
 
-    createDefaultConfigDirectory()
+    # createDefaultConfigDirectory()
     # # print config directory
     # print("Using config directory: {}".format(config_folder))
 
     # search through available ports
     for port in list.comports():
-        # print("Found " + port.device)
+        print("Found " + port.device)
 
         # try to connect to serial
         try:
@@ -40,6 +40,8 @@ def getAttachedMotorSerials():
 
                 # create motor object and append it to the array
                 motor_objects[mid] = (Motor(config_folder, ser, mid))
+
+                # create new motor object so that a new config folder is generated if needs
                 motor_serials[mid] = ser
 
         except SerialException:
@@ -47,6 +49,12 @@ def getAttachedMotorSerials():
 
     # return motor dictionary
     return motor_serials
+
+def motors(config = ""):
+    if config == "":
+        config = createDefaultConfigDirectory()
+    getAttachedSerials(config)
+    return motor_objects
 
 def createDefaultConfigDirectory():
     path = os.path.expanduser(os.path.join("~", ".labsight", "motors"))
@@ -71,7 +79,3 @@ def establishComms(ser):
 
     # communications have not been established
     return False
-
-def motors():
-    serials = getAttachedMotorSerials()
-    return motor_objects

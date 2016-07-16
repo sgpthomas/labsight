@@ -84,6 +84,7 @@ class MotorList(Gtk.Box):
 
         for m in result:
             self.list_box.insert(MotorListChild(m), -1)
+            # print(m)
 
         self.emit("done-loading")
 
@@ -92,7 +93,8 @@ def do_load():
     motor_list = []
 
     # get and open serials of connected motors
-    serials = controller.getAttachedMotorSerials()
+    serials = controller.getAttachedSerials(config.MOTOR_CONFIG_DIR)
+    print(serials)
 
     # search through configuration directory and find configuration files
     file_list = os.listdir(config.MOTOR_CONFIG_DIR)
@@ -119,7 +121,9 @@ class MotorListChild(Gtk.ListBoxRow):
 
     # widgets
     motor_detected_label = None
-    configure_button = None
+
+    # status 0 = disconnected, 1 = connecting, 2 = connected
+    status = 0
 
     # constructor
     def __init__(self, motor):
@@ -172,6 +176,17 @@ class MotorListChild(Gtk.ListBoxRow):
         # clean ui
         self.clean_ui()
 
+        # universal widgets
+        self.control_button = Gtk.Button().new_with_label("Control")
+        self.control_button.connect("clicked", self.control)
+
+        self.connect_button = Gtk.Button().new_with_label("Connect")
+        self.connect_button.connect("clicked", self.connect)
+
+        self.status_label = Gtk.Label("<b>Status:</b> {}".format("Disconnected"))
+        self.status_label.props.use_markup = True
+        self.status_label.props.halign = Gtk.Align.START
+
         if self.motor.getProperty("configured") == True:
             # info labels
             display_label = Gtk.Label(self.motor.getProperty("display-name"))
@@ -187,19 +202,9 @@ class MotorListChild(Gtk.ListBoxRow):
             type_label.props.use_markup = True
             type_label.props.halign = Gtk.Align.START
 
-            status_label = Gtk.Label("<b>Status:</b> {}".format("Disconnected"))
-            status_label.props.use_markup = True
-            status_label.props.halign = Gtk.Align.START
-
             id_label = Gtk.Label("<b>ID:</b> {}".format(self.motor.getProperty("id")))
             id_label.props.use_markup = True
             id_label.props.halign = Gtk.Align.START
-
-            self.control_button = Gtk.Button().new_with_label("Control")
-            self.control_button.connect("clicked", self.control)
-
-            self.connect_button = Gtk.Button().new_with_label("Connect")
-            self.connect_button.connect("clicked", self.connect)
 
             configure_button = Gtk.Button().new_with_label("Configure")
             configure_button.connect("clicked", self.configure)
@@ -208,7 +213,7 @@ class MotorListChild(Gtk.ListBoxRow):
             info_grid.attach(display_label, 0, 0, 1, 1)
             info_grid.attach(axis_label, 0, 1, 1, 1)
             info_grid.attach(type_label, 0, 2, 1, 1)
-            info_grid.attach(status_label, 1, 1, 1, 1)
+            info_grid.attach(self.status_label, 1, 1, 1, 1)
             info_grid.attach(id_label, 1, 2, 1, 1)
 
             button_grid.attach(self.control_button, 0, 0, 1, 1)
@@ -291,3 +296,13 @@ class MotorListChild(Gtk.ListBoxRow):
 
         # start the dialog
         dialog.run()
+
+    def get_status_string(self):
+        if self.status == 0:
+            return "<b>Status:</b> {}".format("Disconnected")
+
+        elif self.status == 1:
+            return "<b>Status:</b> {}".format("Connecting")
+
+        elif self.status == 2:
+            return "<b>Status:</b> {}".format("Disconnected")
