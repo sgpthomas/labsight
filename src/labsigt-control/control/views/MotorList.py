@@ -195,11 +195,11 @@ class MotorListChild(Gtk.ListBoxRow):
             id_label.props.use_markup = True
             id_label.props.halign = Gtk.Align.START
 
-            # configure button
-            if self.motor.serial == None:
-                control_button = Gtk.Button().new_with_label("Connect")
-            else:
-                control_button = Gtk.Button().new_with_label("Control")
+            self.control_button = Gtk.Button().new_with_label("Control")
+            self.control_button.connect("clicked", self.control)
+
+            self.connect_button = Gtk.Button().new_with_label("Connect")
+            self.connect_button.connect("clicked", self.connect)
 
             configure_button = Gtk.Button().new_with_label("Configure")
             configure_button.connect("clicked", self.configure)
@@ -211,8 +211,9 @@ class MotorListChild(Gtk.ListBoxRow):
             info_grid.attach(status_label, 1, 1, 1, 1)
             info_grid.attach(id_label, 1, 2, 1, 1)
 
-            button_grid.attach(control_button, 0, 0, 1, 1)
-            button_grid.attach(configure_button, 0, 1, 1, 1)
+            button_grid.attach(self.control_button, 0, 0, 1, 1)
+            button_grid.attach(self.connect_button, 0, 1, 1, 1)
+            button_grid.attach(configure_button, 0, 2, 1, 1)
 
             # if there is no serial, add disconnected class
             if self.motor.serial == None:
@@ -249,6 +250,19 @@ class MotorListChild(Gtk.ListBoxRow):
 
         # show all
         self.show_all()
+
+        if self.motor.serial == None:
+            self.control_button.props.visible = False
+            self.connect_button.props.visible = True
+        else:
+            self.control_button.props.visible = True
+            self.connect_button.props.visible = False
+
+    def control(self, event, param=None):
+        print("control all the things")
+
+    def connect(self, event, param=None):
+        print("configure all the things")
 
     def configure(self, event, param=None):
         if self.motor.getProperty("configured") == True:
