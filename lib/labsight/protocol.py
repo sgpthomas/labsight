@@ -34,6 +34,9 @@ class Message:
     def __repr__(self):
         return "Message({}, {}, {})".format(self.symbol, self.command, self.data)
 
+    def __str__(self):
+        return " ".join([self.symbol,self.command,self.data])
+
 def sendMessage(msg, ser, func=None):
     try:
         # create message
@@ -79,8 +82,8 @@ def sendMessage(msg, ser, func=None):
                         break
                 if func != None:
                     func(last_response)
-                response.append(last_response)
-
+                # response.append(last_response)
+            response = last_response
         return response
     except SerialException:
         print("Failed to open {}".format(port))

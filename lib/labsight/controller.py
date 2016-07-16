@@ -17,12 +17,12 @@ def getAttachedSerials(config_folder):
     motor_serials = {}
 
     # createDefaultConfigDirectory()
-    # # print config directory
+    # print config directory
     # print("Using config directory: {}".format(config_folder))
 
     # search through available ports
     for port in list.comports():
-        print("Found " + port.device)
+        # print("Found " + port.device)
 
         # try to connect to serial
         try:
