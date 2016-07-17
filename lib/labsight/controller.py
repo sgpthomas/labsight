@@ -50,9 +50,11 @@ def getAttachedSerials(config_folder):
     # return motor dictionary
     return motor_serials
 
-def motors(config = ""):
+def motors(config = "", reset=False):
     if config == "":
         config = createDefaultConfigDirectory()
+    if len(motor_objects) > 0 and !reset:
+        return motor_objects
     getAttachedSerials(config)
     return motor_objects
 

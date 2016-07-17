@@ -15,7 +15,7 @@ class Motor(object):
         self.properties = {}
         self.filename = str(self.id) + ".yml"
         self.path = os.path.join(config_folder, self.filename)
-        self.defaults = {"id":self.id, "step":0}
+        self.defaults = {"id":self.id,"step":0,"style":Data.SINGLE}
         file_list = os.listdir(config_folder)
         if self.filename in file_list:
             self.loadProperties()
@@ -104,7 +104,8 @@ class Motor(object):
         # This kills the motor, calling its release() function
         msg = controller.Message(Symbol.SET, Command.KILL, Data.NIL)
         ret = self.sendMessage(msg)
-        self.getKill
+        # self.getKill
+        return ret
 
     # def getKill(self):
     #     # Updates this object's kill property according to what the Arduino tells it
@@ -112,6 +113,17 @@ class Motor(object):
     #     kill_status = self.sendMessage(get_kill_msg).data
     #     self.properties["kill"] = kill_status
     #     return self.properties["kill"]
+
+    def setStyle(self,style):
+        new_style
+        if style not in [Data.SINGLE, Data.DOUBLE, Data.INTERLEAVE, Data.MICROSTEP]:
+             raise Excpetion("Must be a valid style: single, double, interleave, or microstep")
+        msg = Message(Symbol.SET, Command.ID, str(new_style))
+        self.properties["style"] = style
+        return self.sendMessage(msg)
+
+    def getStyle(self,style):
+        return self.properties["style"]
 
     def setProperty(self, property_name, value):
         # allows something like the GUI to store it's own data in the YAML file
