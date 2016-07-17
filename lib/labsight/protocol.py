@@ -19,10 +19,15 @@ class Command:
     KILL = "kill"
     SPEED = "speed"
     VERSION = "version"
+    STYLE = "style"
 
 """ Data """
 class Data:
     NIL = "_"
+    SINGLE = "single"
+    DOUBLE = "double"
+    INTERLEAVE = "interleave"
+    MICROSTEP = "microstep"
 
 """ Message Structure """
 class Message:

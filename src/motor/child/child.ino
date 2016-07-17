@@ -32,7 +32,7 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 
 Adafruit_StepperMotor *motor = AFMS.getStepper(200, 1);
 
-uint8_t default_style = SINGLE;
+uint8_t current_style = SINGLE;
 uint16_t default_speed = 60;
 
 struct sym {
@@ -51,6 +51,7 @@ struct com {
   String KILL = "kill";
   String SPEED = "speed";
   String VERSION = "version";
+  String STYLE = "style";
 };
 
 com Command;
@@ -180,7 +181,7 @@ String setID(String new_id) {
 }
 
 // The below function supports only relative motion
-String setStep(String distance, uint8_t style = default_style) {
+String setStep(String distance, uint8_t style = current_style) {
   if (distance.toInt() % 1 != 0) {
     erred = true;
     return distance;
@@ -207,6 +208,24 @@ String setStep(String distance, uint8_t style = default_style) {
 String setKill() {
   motor->release();
   return Data.NIL;
+}
+
+String setStyle(String style) {
+  if (style == "single") {
+    current_style = SINGLE;
+  }
+  else if (style == "double") {
+    current_style = DOUBLE;
+  }
+  else if (style == "interleave") {
+    current_style = INTERLEAVE;
+  }
+  else if (style == "microstep") {
+    current_style = MICROSTEP;
+  }
+  else {
+    erred = true;
+  }
 }
 
 void serialEvent() {
@@ -256,7 +275,11 @@ void receivedMessage(String symbol, String command, String data) {
     }
     else if (command == Command.KILL) {
       respond_data = setKill();
-    } else {
+    } 
+    else if (command == Command.STYLE) {
+      respond_data = setStyle(data);
+    }
+    else {
       respond_symbol = Symbol.ERROR;
     }
   }
