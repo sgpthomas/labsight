@@ -53,7 +53,7 @@ def getAttachedSerials(config_folder):
 def motors(config = "", reset=False):
     if config == "":
         config = createDefaultConfigDirectory()
-    if len(motor_objects) > 0 and !reset:
+    if len(motor_objects) > 0 and not reset:
         return motor_objects
     getAttachedSerials(config)
     return motor_objects
