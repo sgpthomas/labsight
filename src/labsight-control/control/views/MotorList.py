@@ -84,7 +84,6 @@ class MotorList(Gtk.Box):
 
         for m in result:
             self.list_box.insert(MotorListChild(m), -1)
-            # print(m)
 
         self.emit("done-loading")
 
@@ -183,7 +182,7 @@ class MotorListChild(Gtk.ListBoxRow):
         self.connect_button = Gtk.Button().new_with_label("Connect")
         self.connect_button.connect("clicked", self.connect)
 
-        self.status_label = Gtk.Label("<b>Status:</b> {}".format("Disconnected"))
+        self.status_label = Gtk.Label("Hi")
         self.status_label.props.use_markup = True
         self.status_label.props.halign = Gtk.Align.START
 
@@ -259,9 +258,13 @@ class MotorListChild(Gtk.ListBoxRow):
         if self.motor.serial == None:
             self.control_button.props.visible = False
             self.connect_button.props.visible = True
+            self.status = 0
         else:
             self.control_button.props.visible = True
             self.connect_button.props.visible = False
+            self.status = 2
+
+        self.update_status()
 
     def control(self, event, param=None):
         print("control all the things")
@@ -297,12 +300,12 @@ class MotorListChild(Gtk.ListBoxRow):
         # start the dialog
         dialog.run()
 
-    def get_status_string(self):
+    def update_status(self):
         if self.status == 0:
-            return "<b>Status:</b> {}".format("Disconnected")
+            self.status_label.props.label = "<b>Status:</b> {}".format("Disconnected")
 
         elif self.status == 1:
-            return "<b>Status:</b> {}".format("Connecting")
+            self.status_label.props.label = "<b>Status:</b> {}".format("Connecting")
 
         elif self.status == 2:
-            return "<b>Status:</b> {}".format("Disconnected")
+            self.status_label.props.label = "<b>Status:</b> {}".format("Connected")
