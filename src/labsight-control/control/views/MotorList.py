@@ -5,10 +5,8 @@ from labsight.motor import Motor
 from labsight import controller
 from control.views.NewMotorDialog import NewMotorDialog
 import control.config as config
-from multiprocessing import Pool
 import os
-
-# from time import sleep
+from threading import Thread
 
 # Motor List Class
 class MotorList(Gtk.Box):
@@ -21,9 +19,14 @@ class MotorList(Gtk.Box):
 
     scrolled_window = None
 
+    motors = {}
+
+    serial_worker = None
+
     # setup signals
     __gsignals__ = {
-        "done-loading": (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ())
+        "done-loading": (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
+        "control-motor": (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
     }
 
     # constructor
@@ -45,7 +48,7 @@ class MotorList(Gtk.Box):
         label = Gtk.Label("Scanning Ports for Connected Motors")
         label.get_style_context().add_class("new-motor-title")
         grid.attach(label, 0, 1, 1, 1)
-        self.stack.add_named(grid, "loading")
+        # self.stack.add_named(grid, "loading")
 
         # create list box
         self.create_list_box()
@@ -59,9 +62,6 @@ class MotorList(Gtk.Box):
         # add to this
         self.add(self.stack)
 
-        # create pool
-        self.pool = Pool(processes=1)
-
         self.show_all()
 
     def create_list_box(self):
@@ -72,43 +72,55 @@ class MotorList(Gtk.Box):
         # add css class to this for styling
         self.list_box.get_style_context().add_class("motor-list")
 
-    def start_load(self):
-        self.stack.set_visible_child_name("loading")
-        self.spinner.start()
+    def load_from_files(self):
+        file_list = os.listdir(config.MOTOR_CONFIG_DIR)
+        for f in file_list:
+            (mid, ext) = f.split(".")
+            if ext == "yml" or ext == "yaml":
+                m = Motor(config.MOTOR_CONFIG_DIR, None, mid)
 
-        self.pool.apply_async(do_load, (), callback=self.end_load)
+                motor_list_child = MotorListChild(m)
+                def f(motor):
+                    self.emit("control-motor", motor)
+                motor_list_child.control_callback = f
+
+                self.motors[mid] = motor_list_child
+                self.list_box.insert(motor_list_child, -1)
+
+    def start_load(self):
+
+        self.load_from_files()
+
+        if self.serial_worker != None:
+            print("waiting for serial worker to end")
+            self.serial_worker.join()
+
+        self.serial_worker = SerialWorker(callback=self.end_load)
+        self.serial_worker.start()
 
     def end_load(self, result):
-        self.spinner.stop()
-        self.stack.set_visible_child_name("list")
 
-        for m in result:
-            self.list_box.insert(MotorListChild(m), -1)
+        for mid in result:
+            if mid in self.motors:
+                self.motors[mid].connect_serial(result[mid])
+            else:
+                self.load_from_files()
+                self.end_load(result)
 
         self.emit("done-loading")
 
-# load class needs to be outside of a class
-def do_load():
-    motor_list = []
+class SerialWorker(Thread):
+    # construct self
+    def __init__(self, callback=None):
+        Thread.__init__(self)
 
-    # get and open serials of connected motors
-    serials = controller.getAttachedSerials(config.MOTOR_CONFIG_DIR)
-    print(serials)
+        self.callback = callback
 
-    # search through configuration directory and find configuration files
-    file_list = os.listdir(config.MOTOR_CONFIG_DIR)
-    for f in file_list:
-        # is file a yml file?
-        (mid, ext) = f.split(".")
-        if ext == "yml" or ext == "yaml":
-            if mid in serials:
-                m = Motor(config.MOTOR_CONFIG_DIR, serials[mid], mid)
-            else:
-                m = Motor(config.MOTOR_CONFIG_DIR, None, mid)
+    def run(self):
+        serials = controller.getAttachedSerials(config.MOTOR_CONFIG_DIR)
 
-            motor_list.append(m)
-
-    return motor_list
+        if self.callback != None:
+            self.callback(serials)
 
 class MotorListChild(Gtk.ListBoxRow):
 
@@ -140,6 +152,8 @@ class MotorListChild(Gtk.ListBoxRow):
             self.motor.setProperty("display-name", "Motor")
             self.motor.setProperty("axis", None)
             self.motor.setProperty("type", None)
+
+        self.control_callback = None
 
         # build ui
         self.update_ui()
@@ -222,6 +236,8 @@ class MotorListChild(Gtk.ListBoxRow):
             # if there is no serial, add disconnected class
             if self.motor.serial == None:
                 self.get_style_context().add_class("disconnected")
+            else:
+                self.get_style_context().remove_class("disconnected")
 
         else:
             # create motor detected
@@ -267,7 +283,7 @@ class MotorListChild(Gtk.ListBoxRow):
         self.update_status()
 
     def control(self, event, param=None):
-        print("control all the things")
+        self.control_callback(self.motor)
 
     def connect(self, event, param=None):
         print("configure all the things")
@@ -305,7 +321,11 @@ class MotorListChild(Gtk.ListBoxRow):
             self.status_label.props.label = "<b>Status:</b> {}".format("Disconnected")
 
         elif self.status == 1:
-            self.status_label.props.label = "<b>Status:</b> {}".format("Connecting")
+            self.status_label.props.label = "<b>Status:</b> {}".format("Connecting…")
 
         elif self.status == 2:
             self.status_label.props.label = "<b>Status:</b> {}".format("Connected")
+
+    def connect_serial(self, serial):
+        self.motor.serial = serial
+        self.update_ui()

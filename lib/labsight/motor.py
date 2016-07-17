@@ -15,7 +15,7 @@ class Motor(object):
         self.properties = {}
         self.filename = str(self.id) + ".yml"
         self.path = os.path.join(config_folder, self.filename)
-        self.defaults = {"id":self.id}
+        self.defaults = {"id":self.id, "step":0}
         file_list = os.listdir(config_folder)
         if self.filename in file_list:
             self.loadProperties()
@@ -82,20 +82,19 @@ class Motor(object):
         self.properties["id"] = new_id
         return self.sendMessage(msg)
 
+    # This is essentially a move function, as you are setting the motor's position (step) in the world
+    # Line on updating kill may be wrong, it depends on how the Arduino handles its release() function
     def setStep(self, steps, function = None):
-        if function == None:
-            function = self.updateDistance
-        # This is essentially a move function, as you are setting the motor's position (step) in the world
-        # Line on updating kill may be wrong, it depends on how the Arduino handles its release() function
+        # define function to update relative step count in dictionary
+
         move_msg = Message(Symbol.SET, Command.STEP, str(steps))
         confirm = self.sendMessage(move_msg, function)
-        # self.getKill()
+
+        # update step count after moving
+        self.properties["step"] += int(confirm.data)
+        self.saveProperties()
+
         return str(confirm)
-    def updateDistance(self, response):
-        # This function allows for realtime receiving and updating of the traveled
-        # It is the defualt function passed for streaming
-        self.properties["step"] += int(response.data)
-        print(str(response))
 
     def getStep(self):
         # Tells you the current position

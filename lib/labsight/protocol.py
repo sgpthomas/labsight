@@ -38,52 +38,50 @@ class Message:
         return " ".join([self.symbol,self.command,self.data])
 
 def sendMessage(msg, ser, func=None):
-    try:
-        # create message
-        msg_string = "{} {} {}".format(msg.symbol, msg.command, msg.data)
+    # try:
+    # create message
+    msg_string = "{} {} {}".format(msg.symbol, msg.command, msg.data)
 
-        # ask the gods of serial about the delays
-        # sleep(delay)
-        ser.write(bytes(msg_string, "ascii"))
-        # sleep(delay)
+    ser.write(bytes(msg_string, "ascii"))
 
-        # read response and strip extrenous space and split it
-        response = ser.readline().strip().decode("ascii").split(" ")
+    # read response and strip extrenous space and split it
+    response = ser.readline().strip().decode("ascii").split(" ")
 
-        # make sure that there are 3 parts
-        if len(response) != 3:
-            raise Exception("No compatible device is connected to this port")
-            return None
+    # make sure that there are 3 parts
+    if len(response) != 3:
+        raise Exception("No compatible device is connected to this port")
+        return None
 
-        # format response array into a Message object
-        response = Message(response[0], response[1], response[2])
+    # format response array into a Message object
+    response = Message(response[0], response[1], response[2])
 
-        # make sure that response has the same command as initial message
-        if response.command != msg.command:
-            raise SerialException("Arduino responded with incorrect command. {} instead of {}".format(response.command, msg.command))
-            return None
+    # make sure that response has the same command as initial message
+    if response.command != msg.command:
+        raise SerialException("Arduino responded with incorrect command. {} instead of {}".format(response.command, msg.command))
+        return None
 
-        if response.symbol == Symbol.ERROR:
-            raise Exception("The Arduino sent the error {}".format(response))
+    if response.symbol == Symbol.ERROR:
+        raise Exception("The Arduino sent the error {}".format(response))
 
-        # if response opens a stream, pass the serial instance to a given function
-        if response.symbol == Symbol.STREAM:
-            response = [response]
-            while True:
-                # last_response is here because the stream response should be distinct from the final response, which is a list of the stream responses
-                last_response = ser.readline().strip().decode("ascii").split(" ")
+    # if response opens a stream, pass the serial instance to a given function
+    if response.symbol == Symbol.STREAM:
+        response = [response]
+        while True:
+            # last_response is here because the stream response should be distinct from the final response, which is a list of the stream responses
+            last_response = ser.readline().strip().decode("ascii").split(" ")
 
-                # check if received full message or just data
-                if len(last_response) == 3:
-                    # format response array into a Message object
-                    last_response = Message(last_response[0], last_response[1], last_response[2])
+            # check if received full message or just data
+            if len(last_response) == 3:
+                # format response array into a Message object
+                last_response = Message(last_response[0], last_response[1], last_response[2])
 
-                    if (last_response.symbol == Symbol.ANSWER):
-                        break
-                if func != None:
-                    func(last_response)
-                # response.append(last_response)
-            response = last_response
-        return response
-    except SerialException:
-        print("Failed to open {}".format(port))
+                if (last_response.symbol == Symbol.ANSWER):
+                    break
+            if func != None:
+                func(last_response)
+            # response.append(last_response)
+        response = last_response
+    return response
+    # except SerialException:
+    #     print("Failed to open {}".format(ser))
+    #     return
