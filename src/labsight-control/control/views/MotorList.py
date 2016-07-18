@@ -164,7 +164,7 @@ class MotorListChild(Gtk.ListBoxRow):
 
     def update_ui(self):
         # add class to self
-        self.get_style_context().add_class("motor-list-child")
+        self.get_style_context().add_class("card")
         self.props.margin = 6
 
         # box
@@ -196,7 +196,7 @@ class MotorListChild(Gtk.ListBoxRow):
         self.connect_button = Gtk.Button().new_with_label("Connect")
         self.connect_button.connect("clicked", self.connect)
 
-        self.status_label = Gtk.Label("Hi")
+        self.status_label = Gtk.Label("")
         self.status_label.props.use_markup = True
         self.status_label.props.halign = Gtk.Align.START
 
@@ -235,9 +235,9 @@ class MotorListChild(Gtk.ListBoxRow):
 
             # if there is no serial, add disconnected class
             if self.motor.serial == None:
-                self.get_style_context().add_class("disconnected")
+                self.get_style_context().add_class("insensitive")
             else:
-                self.get_style_context().remove_class("disconnected")
+                self.get_style_context().remove_class("insensitive")
 
         else:
             # create motor detected

@@ -69,4 +69,6 @@ class MainWindow(Gtk.Window):
             self.stack.set_visible_child_name("welcome")
 
     def control_motor(self, event, motor):
+        self.motor_control.motor = motor
+        self.motor_control.update_ui()
         self.stack.set_visible_child_name("motor-control")
