@@ -94,7 +94,7 @@ class MotorList(Gtk.Box):
         self.load_from_files()
 
         if self.serial_worker != None:
-            print("waiting for serial worker to end")
+            # print("waiting for serial worker to end")
             self.serial_worker.join()
 
         self.serial_queue = queue.Queue()
@@ -103,12 +103,11 @@ class MotorList(Gtk.Box):
 
         while self.serial_queue != None:
 
-            if not self.serial_queue:
-                print("hi")
+            if not self.serial_queue.empty():
                 task = self.serial_queue.get()
                 task()
 
-            if Gtk.events_pending():
+            while Gtk.events_pending():
                 Gtk.main_iteration()
 
     def end_load(self, result):
@@ -134,6 +133,7 @@ class SerialWorker(Thread):
     def run(self):
         serials = controller.getAttachedSerials(config.MOTOR_CONFIG_DIR)
 
+        # self.callback(serials)
         self.queue.put(lambda: self.callback(serials))
 
 class MotorListChild(Gtk.ListBoxRow):
