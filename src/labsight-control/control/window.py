@@ -36,6 +36,7 @@ class MainWindow(Gtk.Window):
     def build_ui(self):
         # initiate stack
         self.stack = Gtk.Stack()
+        self.stack.props.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT
 
         # create welcome view and add it to the stack
         self.welcome = WelcomeView()
@@ -54,6 +55,7 @@ class MainWindow(Gtk.Window):
         self.welcome.connect("refresh-motor-list", self.refresh)
         self.motor_list.connect("done-loading", self.done_loading)
         self.motor_list.connect("control-motor", self.control_motor)
+        self.motor_control.connect("go-back", self.to_list)
 
     # signal functions
     def destroy(self, event, param=None):
@@ -71,3 +73,7 @@ class MainWindow(Gtk.Window):
         self.motor_control.motor = motor
         self.motor_control.update_ui()
         self.stack.set_visible_child_name("motor-control")
+
+    def to_list(self, event, param=None):
+        self.motor_control.motor = None
+        self.stack.set_visible_child_name("motor-list")

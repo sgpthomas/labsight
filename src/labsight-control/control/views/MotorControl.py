@@ -1,6 +1,6 @@
 
 # imports
-from gi.repository import Gtk
+from gi.repository import Gtk, GObject
 from threading import Thread
 import queue
 
@@ -14,10 +14,16 @@ class MotorControl(Gtk.Grid):
     queue = None
 
     # constructor
+
+    __gsignals__ = {
+        "go-back": (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ())
+    }
+
     def __init__(self, motor = None):
-        Gtk.Box.__init__(self)
+        Gtk.Grid.__init__(self)
 
         self.props.margin = 6
+        self.props.row_spacing = 6
 
         # globalize motor
         self.motor = motor
@@ -30,6 +36,15 @@ class MotorControl(Gtk.Grid):
         self.connect_signals()
 
     def init_ui(self):
+        # back button
+        back_button = Gtk.Button().new_with_label("Back")
+        back_button.props.halign = Gtk.Align.START
+        back_button.get_style_context().add_class("back-button")
+        def back_click(event, param = None):
+            self.emit("go-back")
+
+        back_button.connect("clicked", back_click)
+
         # box
         info_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         info_box.props.vexpand = False
@@ -83,8 +98,6 @@ class MotorControl(Gtk.Grid):
         padding_box.get_style_context().add_class("card")
         padding_box.add(info_box)
 
-        self.attach(padding_box, 0, 0, 2, 1)
-
         # status grid
         status_grid = Gtk.Grid()
         status_grid.props.halign = Gtk.Align.END
@@ -123,8 +136,6 @@ class MotorControl(Gtk.Grid):
         status_grid.attach(kill_stat, 0, 2, 1, 1)
         status_grid.attach(self.kill_val, 1, 2, 1, 1)
 
-        self.attach(status_grid, 1, 1, 1, 1)
-
         # control box
         control_grid = Gtk.Grid()
         control_grid.props.halign = Gtk.Align.START
@@ -138,6 +149,9 @@ class MotorControl(Gtk.Grid):
         control_grid.attach(self.entry, 0, 0, 1, 1)
         control_grid.attach(self.move_button, 0, 1, 1, 1)
 
+        self.attach(back_button, 0, -1, 1, 1)
+        self.attach(padding_box, 0, 0, 2, 1)
+        self.attach(status_grid, 1, 1, 1, 1)
         self.attach(control_grid, 0, 1, 1, 1)
 
     def update_ui(self):
