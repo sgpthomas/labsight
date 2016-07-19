@@ -6,7 +6,7 @@ from time import sleep
 from labsight.motor import Motor
 from labsight.protocol import Symbol, Command, Data, Message, sendMessage
 
-version = "0.3"
+lib_version = "0.4"
 
 # This is outside of a function so that it is accessible to every function here, as it needs to be
 motor_objects = {}
@@ -75,8 +75,8 @@ def establishComms(ser):
     except:
         return False
 
-    # check to make sure that returned version matches ours
-    if (response.data == version):
+    # check to make sure that returned lib_version matches ours
+    if (response.data == lib_version):
         return True
 
     # communications have not been established

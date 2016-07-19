@@ -27,7 +27,7 @@ class WelcomeView(Gtk.Grid):
         header.props.wrap = True
         header.props.justify = Gtk.Justification.CENTER
 
-        description = Gtk.Label("Plug a compatible motor in and press 'Refresh'.")
+        description = Gtk.Label("Plug a compatible motor in and press 'Refresh'")
         description.props.hexpand = True
         description.props.halign = Gtk.Align.CENTER
         description.get_style_context().add_class("welcome-description")
