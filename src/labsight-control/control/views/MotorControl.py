@@ -109,10 +109,6 @@ class MotorControl(Gtk.Grid):
         pos_stat.props.halign = Gtk.Align.END
         pos_stat.get_style_context().add_class("status")
 
-        move_stat = Gtk.Label("Moving:")
-        move_stat.props.halign = Gtk.Align.END
-        move_stat.get_style_context().add_class("status")
-
         kill_stat = Gtk.Label("Killed:")
         kill_stat.props.halign = Gtk.Align.END
         kill_stat.get_style_context().add_class("status")
@@ -121,20 +117,14 @@ class MotorControl(Gtk.Grid):
         self.pos_val.props.halign = Gtk.Align.START
         self.pos_val.get_style_context().add_class("value")
 
-        self.move_val = Gtk.Label("")
-        self.move_val.props.halign = Gtk.Align.START
-        self.move_val.get_style_context().add_class("value")
-
         self.kill_val = Gtk.Label("")
         self.kill_val.props.halign = Gtk.Align.START
         self.kill_val.get_style_context().add_class("value")
 
         status_grid.attach(pos_stat, 0, 0, 1, 1)
         status_grid.attach(self.pos_val, 1, 0, 1, 1)
-        status_grid.attach(move_stat, 0, 1, 1, 1)
-        status_grid.attach(self.move_val, 1, 1, 1, 1)
-        status_grid.attach(kill_stat, 0, 2, 1, 1)
-        status_grid.attach(self.kill_val, 1, 2, 1, 1)
+        status_grid.attach(kill_stat, 0, 1, 1, 1)
+        status_grid.attach(self.kill_val, 1, 1, 1, 1)
 
         # control box
         control_grid = Gtk.Grid()
@@ -174,14 +164,14 @@ class MotorControl(Gtk.Grid):
                 self.move_button.props.sensitive = True
                 self.queue = None
 
-            # set button to be insenstive
-            self.move_button.props.sensitive = False
+            try:
+                self.relative_target = int(self.entry.props.text)
 
-            self.move_val.get_style_context().add_class("green")
-            self.move_val.get_style_context().remove_class("red")
-            self.move_val.props.label = "True"
-
-            self.relative_target = int(self.entry.props.text)
+                # set button to be insenstive
+                self.move_button.props.sensitive = False
+            except:
+                print("Type fucking integers you idiot: http://bfy.tw/2cyQ")
+                return
 
             self.queue = queue.Queue()
 
@@ -199,8 +189,15 @@ class MotorControl(Gtk.Grid):
     def connect_signals(self):
         self.move_button.connect("clicked", self.move)
 
+        def censor(event, pos, char, n_chars):
+            if char not in "-0123456789":
+                self.entry.props.text = self.entry.props.text[:pos] + self.entry.props.text[pos+n_chars:]
+
+        self.entry.props.buffer.connect("inserted-text", censor)
+
     def update_pos(self, pos):
-        self.move_val.props.label = "%i / %i" % (int(pos.data), self.relative_target)
+        self.pos_val.props.label = str(int(self.motor.getProperty("step")) + int(pos.data))
+        self.entry.props.progress_fraction = int(pos.data) / self.relative_target
 
     def update_status(self):
         if self.motor != None:
@@ -216,16 +213,14 @@ class MotorControl(Gtk.Grid):
             # position value
             self.pos_val.props.label = str(self.motor.getProperty("step"))
 
-            # moving value
-            self.move_val.props.label = "False"
-            self.move_val.get_style_context().add_class("red")
-            self.move_val.get_style_context().remove_class("green")
-
             # kill value
             # self.kill_val.props.label = str(self.motor.getProperty("kill"))
             self.kill_val.props.label = "False"
             self.kill_val.get_style_context().add_class("red")
             self.kill_val.get_style_context().remove_class("green")
+
+            # update entry
+            self.entry.props.progress_fraction = 0
 
 class MotorMover(Thread):
     def __init__(self, motor, step, motor_queue, move_func = None, callback = None):
