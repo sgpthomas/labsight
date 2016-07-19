@@ -10,7 +10,7 @@ String id = "";
 int LED = 13;
 
 // version number
-String version_number = "0.3";
+String version_number = "0.4";
 
 // is streaming?
 bool stream = false;
@@ -100,7 +100,7 @@ void setup() {
 //  attachInterrupt(digitalPinToInterrupt(encoderB), updateEncoderPos, CHANGE);
 
   // initalize prevEncoderSum
-  prevEncoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
+//  prevEncoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
   
   id = readID();
 
