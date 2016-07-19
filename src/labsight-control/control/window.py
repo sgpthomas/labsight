@@ -31,8 +31,7 @@ class MainWindow(Gtk.Window):
         # show all the things
         self.show_all()
 
-        # refresh motors
-        self.refresh(None)
+        self.refresh()
 
     def build_ui(self):
         # initiate stack
@@ -58,9 +57,9 @@ class MainWindow(Gtk.Window):
 
     # signal functions
     def destroy(self, event, param=None):
-        Gtk.main_quit() 
+        Gtk.main_quit()
 
-    def refresh(self, event, param=None):
+    def refresh(self, event=None, param=None):
         self.stack.set_visible_child_name("motor-list")
         self.motor_list.start_load()
 

@@ -7,6 +7,7 @@ from control.views.NewMotorDialog import NewMotorDialog
 import control.config as config
 import os
 from threading import Thread
+import queue
 
 # Motor List Class
 class MotorList(Gtk.Box):
@@ -22,6 +23,7 @@ class MotorList(Gtk.Box):
     motors = {}
 
     serial_worker = None
+    serial_queue = None
 
     # setup signals
     __gsignals__ = {
@@ -95,8 +97,19 @@ class MotorList(Gtk.Box):
             print("waiting for serial worker to end")
             self.serial_worker.join()
 
-        self.serial_worker = SerialWorker(callback=self.end_load)
+        self.serial_queue = queue.Queue()
+        self.serial_worker = SerialWorker(self.serial_queue, self.end_load)
         self.serial_worker.start()
+
+        while self.serial_queue != None:
+
+            if not self.serial_queue:
+                print("hi")
+                task = self.serial_queue.get()
+                task()
+
+            if Gtk.events_pending():
+                Gtk.main_iteration()
 
     def end_load(self, result):
 
@@ -107,20 +120,21 @@ class MotorList(Gtk.Box):
                 self.load_from_files()
                 self.end_load(result)
 
+        self.serial_queue = None
         self.emit("done-loading")
 
 class SerialWorker(Thread):
     # construct self
-    def __init__(self, callback=None):
+    def __init__(self, ser_queue, callback):
         Thread.__init__(self)
 
         self.callback = callback
+        self.queue = ser_queue
 
     def run(self):
         serials = controller.getAttachedSerials(config.MOTOR_CONFIG_DIR)
 
-        if self.callback != None:
-            self.callback(serials)
+        self.queue.put(lambda: self.callback(serials))
 
 class MotorListChild(Gtk.ListBoxRow):
 

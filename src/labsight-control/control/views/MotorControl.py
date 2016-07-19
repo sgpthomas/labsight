@@ -2,6 +2,7 @@
 # imports
 from gi.repository import Gtk
 from threading import Thread
+import queue
 
 # motor control class
 class MotorControl(Gtk.Grid):
@@ -9,6 +10,8 @@ class MotorControl(Gtk.Grid):
     moving = False
     relative_target = -1
     motor_mover = None
+
+    queue = None
 
     # constructor
     def __init__(self, motor = None):
@@ -149,15 +152,13 @@ class MotorControl(Gtk.Grid):
         if self.motor != None:
 
             if self.motor_mover != None:
-                print("thread already exists")
                 self.motor_mover.join()
-                # return
             
             # define callback
             def callback(result):
-                print(result)
                 self.update_status()
                 self.move_button.props.sensitive = True
+                self.queue = None
 
             # set button to be insenstive
             self.move_button.props.sensitive = False
@@ -168,9 +169,18 @@ class MotorControl(Gtk.Grid):
 
             self.relative_target = int(self.entry.props.text)
 
+            self.queue = queue.Queue()
+
             # setup thread and queue
-            self.motor_mover = MotorMover(self.motor, self.relative_target, move_func=self.update_pos, callback=callback)
+            self.motor_mover = MotorMover(self.motor, self.relative_target, self.queue, move_func=self.update_pos, callback=callback)
             self.motor_mover.start()
+
+            while self.queue != None:
+                task = self.queue.get()
+                task()
+
+                while Gtk.events_pending():
+                    Gtk.main_iteration()
 
     def connect_signals(self):
         self.move_button.connect("clicked", self.move)
@@ -204,17 +214,21 @@ class MotorControl(Gtk.Grid):
             self.kill_val.get_style_context().remove_class("green")
 
 class MotorMover(Thread):
-    def __init__(self, motor, step, move_func = None, callback = None):
+    def __init__(self, motor, step, motor_queue, move_func = None, callback = None):
         Thread.__init__(self)
 
         self.motor = motor
         self.step = step
         self.move_func = move_func
         self.callback = callback
-
+        self.queue = motor_queue
 
     def run(self):
-        res = self.motor.setStep(self.step, self.move_func)
+        def queue_move(pos):
+            self.queue.put(lambda: self.move_func(pos))
+
+        # res = self.motor.setStep(self.step, self.move_func)
+        res = self.motor.setStep(self.step, queue_move)
 
         if self.callback != None:
-            self.callback(res)
+            self.queue.put(lambda: self.callback(res))
