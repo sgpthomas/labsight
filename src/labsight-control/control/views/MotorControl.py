@@ -3,6 +3,7 @@
 from gi.repository import Gtk, GObject
 from threading import Thread
 import queue
+from control.widgets import ModeButton
 
 # motor control class
 class MotorControl(Gtk.Grid):
@@ -13,7 +14,7 @@ class MotorControl(Gtk.Grid):
 
     queue = None
 
-    # constructor
+    movement_mode = ""
 
     __gsignals__ = {
         "go-back": (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ())
@@ -128,10 +129,17 @@ class MotorControl(Gtk.Grid):
         control_grid.props.row_spacing = 6
         control_grid.props.column_spacing = 12
 
+        # self.type_modebutton = ModeButton("Absolute", "Relative")
+        self.type_modebutton = ModeButton(["Absolute", "Relative"])
+        def update_mode(origin, selected):
+            self.movement_mode = selected
+        self.type_modebutton.connect("mode-changed", update_mode)
+
         self.move_entry = Gtk.SpinButton().new_with_range(-2000000, 2000000, 1)
         self.move_entry.props.width_request = 160
         self.move_button = Gtk.Button().new_with_label("Move")
 
+        control_grid.attach(self.type_modebutton, 0, -1, 1, 1)
         control_grid.attach(self.move_entry, 0, 0, 1, 1)
         control_grid.attach(self.move_button, 0, 1, 1, 1)
 
@@ -143,6 +151,9 @@ class MotorControl(Gtk.Grid):
 
         # reset some aspects of the ui
         self.move_entry.props.value = 0
+
+        # set default movement mode
+        self.type_modebutton.set_active("Relative")
 
         # update status
         self.update_status()
@@ -161,15 +172,13 @@ class MotorControl(Gtk.Grid):
                 self.update_status()
                 self.queue = None
 
-            try:
-                # self.relative_target = int(self.entry.props.text)
+            if self.movement_mode == "Relative":
                 self.relative_target = self.move_entry.get_value_as_int()
+            elif self.movement_mode == "Absolute":
+                self.relative_target = self.move_entry.get_value_as_int() - self.motor.getProperty("step")
 
-                # set button to be insenstive
-                self.move_button.props.sensitive = False
-            except:
-                print("Type fucking integers you idiot: http://bfy.tw/2cyQ")
-                return
+            # set button to be insenstive
+            self.move_button.props.sensitive = False
 
             self.queue = queue.Queue()
 
