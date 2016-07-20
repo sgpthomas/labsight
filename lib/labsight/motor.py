@@ -91,8 +91,11 @@ class Motor(object):
         confirm = self.sendMessage(move_msg, function)
 
         # update step count after moving
-        self.properties["step"] += int(confirm.data)
-        self.saveProperties()
+        try:
+            self.properties["step"] += int(confirm.data)
+            self.saveProperties()
+        except:
+            print("Couldn't convert {} to an int".format(confirm.data))
 
         return str(confirm)
 
@@ -111,7 +114,7 @@ class Motor(object):
     #     # Updates this object's kill property according to what the Arduino tells it
     #     get_kill_msg = Message(Symbol.GET, Command.KILL, "_")
     #     kill_status = self.sendMessage(get_kill_msg).data
-    #     self.properties["kill"] = kill_status
+    #     self.properties["kill"] = Kill_status
     #     return self.properties["kill"]
 
     def setStyle(self,style):

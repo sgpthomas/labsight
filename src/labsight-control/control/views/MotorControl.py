@@ -36,15 +36,6 @@ class MotorControl(Gtk.Grid):
         self.connect_signals()
 
     def init_ui(self):
-        # back button
-        back_button = Gtk.Button().new_with_label("Back")
-        back_button.props.halign = Gtk.Align.START
-        back_button.get_style_context().add_class("back-button")
-        def back_click(event, param = None):
-            self.emit("go-back")
-
-        back_button.connect("clicked", back_click)
-
         # box
         info_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         info_box.props.vexpand = False
@@ -100,7 +91,7 @@ class MotorControl(Gtk.Grid):
 
         # status grid
         status_grid = Gtk.Grid()
-        status_grid.props.halign = Gtk.Align.END
+        status_grid.props.halign = Gtk.Align.CENTER
         status_grid.props.margin = 6
         status_grid.props.row_spacing = 6
         status_grid.props.column_spacing = 12
@@ -109,22 +100,26 @@ class MotorControl(Gtk.Grid):
         pos_stat.props.halign = Gtk.Align.END
         pos_stat.get_style_context().add_class("status")
 
-        kill_stat = Gtk.Label("Killed:")
-        kill_stat.props.halign = Gtk.Align.END
-        kill_stat.get_style_context().add_class("status")
+        vel_stat = Gtk.Label("Velocity:")
+        vel_stat.props.halign = Gtk.Align.END
+        vel_stat.get_style_context().add_class("status")
 
         self.pos_val = Gtk.Label("")
         self.pos_val.props.halign = Gtk.Align.START
         self.pos_val.get_style_context().add_class("value")
 
-        self.kill_val = Gtk.Label("")
-        self.kill_val.props.halign = Gtk.Align.START
-        self.kill_val.get_style_context().add_class("value")
+        self.vel_val = Gtk.Label("")
+        self.vel_val.props.halign = Gtk.Align.START
+        self.vel_val.get_style_context().add_class("value")
+
+        self.reset_pos_button = Gtk.Button().new_with_label("Reset Position")
+        self.reset_pos_button.props.halign = Gtk.Align.CENTER
 
         status_grid.attach(pos_stat, 0, 0, 1, 1)
         status_grid.attach(self.pos_val, 1, 0, 1, 1)
-        status_grid.attach(kill_stat, 0, 1, 1, 1)
-        status_grid.attach(self.kill_val, 1, 1, 1, 1)
+        status_grid.attach(vel_stat, 0, 1, 1, 1)
+        status_grid.attach(self.vel_val, 1, 1, 1, 1)
+        status_grid.attach(self.reset_pos_button, 0, 2, 2, 1)
 
         # control box
         control_grid = Gtk.Grid()
@@ -133,18 +128,21 @@ class MotorControl(Gtk.Grid):
         control_grid.props.row_spacing = 6
         control_grid.props.column_spacing = 12
 
-        self.entry = Gtk.Entry()
+        self.move_entry = Gtk.SpinButton().new_with_range(-2000000, 2000000, 1)
+        self.move_entry.props.width_request = 160
         self.move_button = Gtk.Button().new_with_label("Move")
 
-        control_grid.attach(self.entry, 0, 0, 1, 1)
+        control_grid.attach(self.move_entry, 0, 0, 1, 1)
         control_grid.attach(self.move_button, 0, 1, 1, 1)
 
-        self.attach(back_button, 0, -1, 1, 1)
         self.attach(padding_box, 0, 0, 2, 1)
         self.attach(status_grid, 1, 1, 1, 1)
         self.attach(control_grid, 0, 1, 1, 1)
 
     def update_ui(self):
+
+        # reset some aspects of the ui
+        self.move_entry.props.value = 0
 
         # update status
         self.update_status()
@@ -161,11 +159,11 @@ class MotorControl(Gtk.Grid):
             # define callback
             def callback(result):
                 self.update_status()
-                self.move_button.props.sensitive = True
                 self.queue = None
 
             try:
-                self.relative_target = int(self.entry.props.text)
+                # self.relative_target = int(self.entry.props.text)
+                self.relative_target = self.move_entry.get_value_as_int()
 
                 # set button to be insenstive
                 self.move_button.props.sensitive = False
@@ -188,16 +186,16 @@ class MotorControl(Gtk.Grid):
 
     def connect_signals(self):
         self.move_button.connect("clicked", self.move)
+        self.reset_pos_button.connect("clicked", self.reset_pos)
 
-        def censor(event, pos, char, n_chars):
-            if char not in "-0123456789":
-                self.entry.props.text = self.entry.props.text[:pos] + self.entry.props.text[pos+n_chars:]
-
-        self.entry.props.buffer.connect("inserted-text", censor)
+    def reset_pos(self, event=None, param=None):
+        if self.motor != None:
+            self.motor.setProperty("step", 0)
+            self.update_status()
 
     def update_pos(self, pos):
-        self.pos_val.props.label = str(int(self.motor.getProperty("step")) + int(pos.data))
-        self.entry.props.progress_fraction = int(pos.data) / self.relative_target
+        self.pos_val.props.label = "%s %s" % (str(int(self.motor.getProperty("step")) + int(pos.data)), self.get_position_units())
+        self.move_entry.props.progress_fraction = int(pos.data) / self.relative_target
 
     def update_status(self):
         if self.motor != None:
@@ -211,16 +209,20 @@ class MotorControl(Gtk.Grid):
             self.type_label.props.label = "<b>Type:</b> {}".format(self.motor.getProperty("type"))
 
             # position value
-            self.pos_val.props.label = str(self.motor.getProperty("step"))
+            self.pos_val.props.label = "%s %s" % (str(int(self.motor.getProperty("step"))), self.get_position_units())
 
             # kill value
-            # self.kill_val.props.label = str(self.motor.getProperty("kill"))
-            self.kill_val.props.label = "False"
-            self.kill_val.get_style_context().add_class("red")
-            self.kill_val.get_style_context().remove_class("green")
+            self.vel_val.props.label = "{} {}".format(0, self.get_velocity_units())
 
             # update entry
-            self.entry.props.progress_fraction = 0
+            self.move_entry.props.progress_fraction = 0
+            self.move_button.props.sensitive = True
+
+    def get_position_units(self):
+        return "steps"
+
+    def get_velocity_units(self):
+        return "steps/s"
 
 class MotorMover(Thread):
     def __init__(self, motor, step, motor_queue, move_func = None, callback = None):

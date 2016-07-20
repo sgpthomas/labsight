@@ -27,7 +27,7 @@ class MotorList(Gtk.Box):
 
     # setup signals
     __gsignals__ = {
-        "done-loading": (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, ()),
+        "done-loading": (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ()),
         "control-motor": (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE, (GObject.TYPE_PYOBJECT,))
     }
 
