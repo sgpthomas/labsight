@@ -133,6 +133,7 @@ class MotorControl(Gtk.Grid):
         self.type_modebutton = ModeButton(["Absolute", "Relative"])
         def update_mode(origin, selected):
             self.movement_mode = selected
+            self.update_move_button()
         self.type_modebutton.connect("mode-changed", update_mode)
 
         self.move_entry = Gtk.SpinButton().new_with_range(-2000000, 2000000, 1)
@@ -172,10 +173,7 @@ class MotorControl(Gtk.Grid):
                 self.update_status()
                 self.queue = None
 
-            if self.movement_mode == "Relative":
-                self.relative_target = self.move_entry.get_value_as_int()
-            elif self.movement_mode == "Absolute":
-                self.relative_target = self.move_entry.get_value_as_int() - self.motor.getProperty("step")
+            self.relative_target = self.get_relative_target()
 
             # set button to be insenstive
             self.move_button.props.sensitive = False
@@ -197,6 +195,26 @@ class MotorControl(Gtk.Grid):
         self.move_button.connect("clicked", self.move)
         self.reset_pos_button.connect("clicked", self.reset_pos)
 
+        # update move position on all text changess
+        def notify_text(origin=None, prop=None):
+            if prop.name == "text":
+                self.update_move_button()
+
+        self.move_entry.props.buffer.connect("notify", notify_text)
+
+    def get_relative_target(self):
+        target = 0
+        try:
+            move_entry_value = int(self.move_entry.props.buffer.props.text)
+            if self.movement_mode == "Relative":
+                target = move_entry_value
+            elif self.movement_mode == "Absolute":
+                target = move_entry_value - self.motor.getProperty("step")
+        except:
+            pass
+
+        return target
+
     def reset_pos(self, event=None, param=None):
         if self.motor != None:
             self.motor.setProperty("step", 0)
@@ -205,6 +223,10 @@ class MotorControl(Gtk.Grid):
     def update_pos(self, pos):
         self.pos_val.props.label = "%s %s" % (str(int(self.motor.getProperty("step")) + int(pos.data)), self.get_position_units())
         self.move_entry.props.progress_fraction = int(pos.data) / self.relative_target
+
+    def update_move_button(self, a=None, b=None, c=None, d=None):
+        # update move button
+        self.move_button.props.label = "Move {} {}".format(self.get_relative_target(), self.get_position_units())
 
     def update_status(self):
         if self.motor != None:
@@ -226,6 +248,8 @@ class MotorControl(Gtk.Grid):
             # update entry
             self.move_entry.props.progress_fraction = 0
             self.move_button.props.sensitive = True
+
+            self.update_move_button()
 
     def get_position_units(self):
         return "steps"
