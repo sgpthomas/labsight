@@ -138,6 +138,7 @@ class MotorControl(Gtk.Grid):
 
         self.move_entry = Gtk.SpinButton().new_with_range(-2000000, 2000000, 1)
         self.move_entry.props.width_request = 160
+        self.move_entry.props.orientation = Gtk.Orientation.VERTICAL
         self.move_button = Gtk.Button().new_with_label("Move")
 
         control_grid.attach(self.type_modebutton, 0, -1, 1, 1)

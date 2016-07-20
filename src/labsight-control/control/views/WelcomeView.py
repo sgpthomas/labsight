@@ -40,7 +40,6 @@ class WelcomeView(Gtk.Grid):
         welcome_button.props.halign = Gtk.Align.CENTER
         welcome_button.get_style_context().add_class("welcome-button")
 
-
         # build user interface
         self.attach(header, 0, 0, 1, 1)
         self.attach(description, 0, 1, 1, 1)

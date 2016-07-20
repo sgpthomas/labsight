@@ -99,6 +99,7 @@ class MainWindow(Gtk.Window):
         self.motor_control.motor = motor
         self.motor_control.update_ui()
         self.stack.set_visible_child_name("motor-control")
+        self.headerbar.queue_draw()
 
     def to_list(self, event, param=None):
         self.back_button.props.visible = False
