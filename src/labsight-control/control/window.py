@@ -2,9 +2,9 @@
 # imports
 from gi.repository import Gtk, GObject, Gio
 import control.config as config
-from control.views.WelcomeView import WelcomeView
-from control.views.MotorList import MotorList
-from control.views.MotorControl import MotorControl
+from control.views import WelcomeView
+from control.views import MotorList
+from control.views import MotorControl
 
 from threading import Timer
 
@@ -105,3 +105,4 @@ class MainWindow(Gtk.Window):
         self.back_button.props.visible = False
         self.motor_control.motor = None
         self.stack.set_visible_child_name("motor-list")
+        self.headerbar.queue_draw()

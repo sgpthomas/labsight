@@ -3,7 +3,7 @@
 from gi.repository import Gtk, GObject
 from labsight.motor import Motor
 from labsight import controller
-from control.views.NewMotorDialog import NewMotorDialog
+from control.dialogs import NewMotorDialog
 import control.config as config
 import os
 from threading import Thread
@@ -166,6 +166,9 @@ class MotorListChild(Gtk.ListBoxRow):
             self.motor.setProperty("display-name", "Motor")
             self.motor.setProperty("axis", None)
             self.motor.setProperty("type", None)
+            self.motor.setProperty("callibrated", False)
+            self.motor.setProperty("callibrate-steps", -1)
+            self.motor.setProperty("callibrate-units", -1)
 
         self.control_callback = None
 

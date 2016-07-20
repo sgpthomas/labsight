@@ -1,0 +1,2 @@
+from control.dialogs.NewMotorDialog import NewMotorDialog
+from control.dialogs.CallibrateDialog import CallibrateDialog
