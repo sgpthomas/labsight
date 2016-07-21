@@ -247,6 +247,9 @@ class MotorControl(Gtk.Grid):
                 # update self
                 self.update_ui()
 
+                # set units active
+                self.unit_toggle.set_active("Units")
+
             # connect to applied signal
             dialog.connect("applied", apply_configurations)
 
@@ -276,8 +279,8 @@ class MotorControl(Gtk.Grid):
                 else:
                     self.use_steps = False
                     if not self.motor.getProperty("callibrated"):
-                        self.callibrate()
                         self.unit_toggle.set_active("Steps")
+                        self.callibrate()
                     self.move_entry.props.climb_rate = self.motor.getProperty("callibrated-units") / self.motor.getProperty("callibrated-steps")
 
             self.update_status()
@@ -337,7 +340,7 @@ class MotorControl(Gtk.Grid):
             self.move_entry.set_increments(1.0, 1.0)
         else:
             self.move_entry.props.value = self.steps_to_units(float(self.move_entry.props.buffer.props.text))
-            self.move_entry.set_increments(1.8, 1.8)
+            self.move_entry.set_increments(self.motor.getProperty("callibrated-units"), self.motor.getProperty("callibrated-units"))
 
 
     def update_status(self):

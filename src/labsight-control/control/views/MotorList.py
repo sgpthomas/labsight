@@ -167,8 +167,8 @@ class MotorListChild(Gtk.ListBoxRow):
             self.motor.setProperty("axis", None)
             self.motor.setProperty("type", None)
             self.motor.setProperty("callibrated", False)
-            self.motor.setProperty("callibrate-steps", -1)
-            self.motor.setProperty("callibrate-units", -1)
+            self.motor.setProperty("callibrated-steps", -1)
+            self.motor.setProperty("callibrated-units", -1)
 
         self.control_callback = None
 

@@ -15,8 +15,8 @@ void setup() {
   
   prevVal = binaryToDecimal(digitalRead(pinA), digitalRead(pinB));
 
-  attachInterrupt(digitalPinToInterrupt(pinA), doEncoder, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(pinB), doEncoder, CHANGE);
+//  attachInterrupt(digitalPinToInterrupt(pinA), doEncoder, CHANGE);
+//  attachInterrupt(digitalPinToInterrupt(pinB), doEncoder, CHANGE);
   Serial.begin(9600);
   Serial.println("start");
 }
