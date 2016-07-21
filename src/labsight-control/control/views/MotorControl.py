@@ -139,7 +139,7 @@ class MotorControl(Gtk.Grid):
         # self.type_modebutton = ModeButton("Absolute", "Relative")
         self.type_modebutton = ModeButton(["Absolute", "Relative"])
 
-        self.move_entry = Gtk.SpinButton().new_with_range(-2000000, 2000000, 1)
+        self.move_entry = Gtk.SpinButton().new_with_range(-20000.0, 20000.0, 0.1)
         self.move_entry.props.width_request = 160
         self.move_entry.props.orientation = Gtk.Orientation.HORIZONTAL
         self.move_button = Gtk.Button().new_with_label("Move")
@@ -273,7 +273,6 @@ class MotorControl(Gtk.Grid):
             if self.motor != None:
                 if selected == "Steps":
                     self.use_steps = True
-                    self.move_entry.props.climb_rate = 1
                 else:
                     self.use_steps = False
                     if not self.motor.getProperty("callibrated"):
@@ -282,6 +281,7 @@ class MotorControl(Gtk.Grid):
                     self.move_entry.props.climb_rate = self.motor.getProperty("callibrated-units") / self.motor.getProperty("callibrated-steps")
 
             self.update_status()
+            self.update_move_entry()
 
         self.unit_toggle.connect("mode-changed", update_unit)
 
@@ -294,14 +294,19 @@ class MotorControl(Gtk.Grid):
     def get_relative_target(self):
         target = 0
         # try:
-        # move_entry_value = self.units_to_steps(float(self.move_entry.props.buffer.props.text))
-        move_entry_value = int(self.move_entry.props.buffer.props.text)
-        if self.movement_mode == "Relative":
-            target = move_entry_value
-        elif self.movement_mode == "Absolute":
-            target = move_entry_value - self.motor.getProperty("step")
-        # except:
-            # pass
+        if self.move_entry.props.buffer.props.text != "":
+            move_entry_value = 0
+            if self.use_steps:
+                move_entry_value = int(float(self.move_entry.props.buffer.props.text))
+            else:
+                move_entry_value = self.units_to_steps(float(self.move_entry.props.buffer.props.text))
+
+            if self.movement_mode == "Relative":
+                target = move_entry_value
+            elif self.movement_mode == "Absolute":
+                target = move_entry_value - self.motor.getProperty("step")
+            # except:
+                # pass
 
         return target
 
@@ -311,13 +316,29 @@ class MotorControl(Gtk.Grid):
             self.update_status()
 
     def update_pos(self, pos):
-        self.pos_val.props.label = "%s %s" % (str(self.steps_to_units(self.motor.getProperty("step") + int(pos.data))), self.get_position_units())
+        position = self.motor.getProperty("step") + int(pos.data)
+        if not self.use_steps:
+            position = self.steps_to_units(position)
+
+        self.pos_val.props.label = "{} {}".format(position, self.get_position_units())
         self.move_entry.props.progress_fraction = int(pos.data) / self.relative_target
 
     def update_move_button(self, a=None, b=None, c=None, d=None):
         # update move button
-        # self.move_button.props.label = "Move {} {}".format(self.steps_to_units(self.get_relative_target()), self.get_position_units())
-        self.move_button.props.label = "Move {} {}".format(self.get_relative_target(), self.get_position_units())
+        target = self.get_relative_target()
+        if not self.use_steps:
+            target = self.steps_to_units(target)
+
+        self.move_button.props.label = "Move {} {}".format(target, self.get_position_units())
+
+    def update_move_entry(self):
+        if self.use_steps:
+            self.move_entry.props.value = self.units_to_steps(float(self.move_entry.props.buffer.props.text))
+            self.move_entry.set_increments(1.0, 1.0)
+        else:
+            self.move_entry.props.value = self.steps_to_units(float(self.move_entry.props.buffer.props.text))
+            self.move_entry.set_increments(1.8, 1.8)
+
 
     def update_status(self):
         if self.motor != None:
@@ -331,7 +352,10 @@ class MotorControl(Gtk.Grid):
             self.type_label.props.label = "<b>Type:</b> {}".format(self.motor.getProperty("type"))
 
             # position value
-            self.pos_val.props.label = "%s %s" % (str(int(self.motor.getProperty("step"))), self.get_position_units())
+            if self.use_steps:
+                self.pos_val.props.label = "{} {}".format(self.motor.getProperty("step"), self.get_position_units())
+            else:
+                self.pos_val.props.label = "{} {}".format(self.steps_to_units(self.motor.getProperty("step")), self.get_position_units())
 
             # kill value
             self.vel_val.props.label = "{} {}".format(0, self.get_velocity_units())
@@ -343,18 +367,10 @@ class MotorControl(Gtk.Grid):
             self.update_move_button()
 
     def steps_to_units(self, steps):
-        if self.use_steps:
-            return steps
-        else:
-            return round(steps * (self.motor.getProperty("callibrated-units") / self.motor.getProperty("callibrated-steps")), 3)
+        return round(steps * (self.motor.getProperty("callibrated-units") / self.motor.getProperty("callibrated-steps")), 3)
 
     def units_to_steps(self, units):
-        # print(units, round(units * (self.motor.getProperty("callibrated-steps")) / self.motor.getProperty("callibrated-units"), 3))
-        # if self.use_steps:
-        #     return round(units * (self.motor.getProperty("callibrated-steps")) / self.motor.getProperty("callibrated-units"), 3)
-        # else:
-        #     return units
-        return units
+        return int(units * (self.motor.getProperty("callibrated-steps") / self.motor.getProperty("callibrated-units")))
 
     def get_position_units(self):
         if self.use_steps:
