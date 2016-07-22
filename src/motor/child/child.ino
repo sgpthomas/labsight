@@ -16,8 +16,10 @@ String version_number = "0.4";
 bool stream = false;
 
 // encoder pins
-int encoderA = 2;
-int encoderB = 3;
+int encoderA = 4;
+int encoderAm = 5;
+int encoderB = 6;
+int encoderBm = 7;
 
 // encoder position and previous encoder pin sum
 volatile unsigned int encoderPos = 0;
@@ -71,7 +73,7 @@ String readID() {
   while (true) { // loop
     value = EEPROM.read(address);
     
-    if (value != 0) { // value is not null
+    if (value != 0 && byte(value) != 255) { // value is not null
       id += value;
     } else {
       break;
@@ -90,10 +92,16 @@ void setup() {
 
   // setup encoder pins and turn on internal pull-up resistor
   pinMode(encoderA, INPUT);
-  digitalWrite(encoderA, HIGH);
+  // digitalWrite(encoderA, LOW);
 
   pinMode(encoderB, INPUT);
-  digitalWrite(encoderB, HIGH);
+  // digitalWrite(encoderB, HIGH);
+
+  pinMode(encoderAm, INPUT);
+  // digitalWrite(encoderAm, HIGH);
+
+  pinMode(encoderBm, INPUT);
+  // digitalWrite(encoderBm, HIGH);
 
   // attach interrupt to keep track of position
 //  attachInterrupt(digitalPinToInterrupt(encoderA), updateEncoderPos, CHANGE);
@@ -101,11 +109,10 @@ void setup() {
 
   // initalize prevEncoderSum
 //  prevEncoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
-  
+
   id = readID();
 
   // Set up motor hardware
-
   AFMS.begin();
   motor->setSpeed(default_speed);
 }
@@ -199,7 +206,10 @@ String setStep(String distance, uint8_t style = current_style) {
     if (dir == BACKWARD) {
       index *= -1;
     }
+    // String test = String(index) + " " + String(digitalRead(encoderAm)) + " " + String(digitalRead(encoderAm)) + " " + String(digitalRead(encoderBm)) + " " + String(digitalRead(encoderBm));
     Serial.println(join(Symbol.STREAM, Command.STEP, String(index)));
+    // Serial.println(join(Symbol.STREAM, Command.STEP, test));
+    // delay(250);
   }
   stream = false;
   return distance;
