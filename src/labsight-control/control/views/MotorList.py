@@ -60,7 +60,9 @@ class MotorList(Gtk.Box):
         loading_box = Gtk.Box()
         loading_box.props.margin = 6
         loading_box.get_style_context().add_class("card")
-        loading_box.add(Gtk.Label("Loading"))
+
+        self.create_loading_stack()
+        loading_box.add(self.loading_stack)
         content.add(loading_box)
 
         # add to scrolled window
@@ -78,6 +80,22 @@ class MotorList(Gtk.Box):
         self.list_box.props.selection_mode = Gtk.SelectionMode.NONE
 
         self.list_box.get_style_context().add_class("motor-list")
+
+    def create_loading_stack(self):
+        self.loading_stack = Gtk.Stack()
+        self.loading_stack.props.margin = 6
+
+        self.refresh_button = Gtk.Button().new_with_label("Reload")
+        self.refresh_button.props.hexpand = False
+        self.refresh_button.props.halign = Gtk.Align.CENTER
+
+        self.loading_stack.add_named(self.refresh_button, "refresh")
+
+        self.progress_bar = Gtk.ProgressBar()
+        self.progress_bar.props.hexpand = True
+        self.progress_bar.props.text = "Scanning Ports for Attached Motors"
+
+        self.loading_stack.add_named(self.progress_bar, "progress")
 
     def load_from_files(self):
         file_list = os.listdir(config.MOTOR_CONFIG_DIR)
