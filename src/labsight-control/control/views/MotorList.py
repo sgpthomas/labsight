@@ -1,4 +1,3 @@
-
 # imports
 from gi.repository import Gtk, GObject
 from labsight.motor import Motor

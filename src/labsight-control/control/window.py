@@ -1,4 +1,3 @@
-
 # imports
 from gi.repository import Gtk, GObject, Gio
 import control.config as config
