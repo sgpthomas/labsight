@@ -36,8 +36,9 @@ class MotorList(Gtk.Box):
         # initiate grid
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL)
 
-        # create stack
-        self.stack = Gtk.Stack()
+        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        content.props.expand = True
+        content.get_style_context().add_class("motor-list")
 
         # create spinner
         grid = Gtk.Grid()
@@ -54,25 +55,47 @@ class MotorList(Gtk.Box):
 
         # create list box
         self.create_list_box()
+        content.add(self.list_box)
+
+        loading_box = Gtk.Box()
+        loading_box.props.margin = 6
+        loading_box.get_style_context().add_class("card")
+
+        self.create_loading_stack()
+        loading_box.add(self.loading_stack)
+        content.add(loading_box)
 
         # add to scrolled window
         self.scrolled_window = Gtk.ScrolledWindow()
-        self.scrolled_window.add(self.list_box)
-
-        self.stack.add_named(self.scrolled_window, "list")
+        self.scrolled_window.add(content)
 
         # add to this
-        self.add(self.stack)
+        self.add(self.scrolled_window)
 
         self.show_all()
 
     def create_list_box(self):
         self.list_box = Gtk.ListBox()
-        self.list_box.props.expand = True
+        # self.list_box.props.expand = False
         self.list_box.props.selection_mode = Gtk.SelectionMode.NONE
 
-        # add css class to this for styling
         self.list_box.get_style_context().add_class("motor-list")
+
+    def create_loading_stack(self):
+        self.loading_stack = Gtk.Stack()
+        self.loading_stack.props.margin = 6
+
+        self.refresh_button = Gtk.Button().new_with_label("Reload")
+        self.refresh_button.props.hexpand = False
+        self.refresh_button.props.halign = Gtk.Align.CENTER
+
+        self.loading_stack.add_named(self.refresh_button, "refresh")
+
+        self.progress_bar = Gtk.ProgressBar()
+        self.progress_bar.props.hexpand = True
+        self.progress_bar.props.text = "Scanning Ports for Attached Motors"
+
+        self.loading_stack.add_named(self.progress_bar, "progress")
 
     def load_from_files(self):
         file_list = os.listdir(config.MOTOR_CONFIG_DIR)

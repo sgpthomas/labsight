@@ -1,64 +1,63 @@
-# LabSight Development Plans
+# LabSight
 
-This will detail every subroutine that we need to write and the files in which we put them. There will be nothing functional in this repository.
+This will detail every subroutine that we write.
 
-For example, a planned function would look like this:
+## Files
 
-```python
-def foo():
-    # some description
-    # of the function this routine will provide
-```
-## Proposed Files
+The current goal for these files is that they allow you to control motors, in a manner similar to NI MAX. Functionality for dataruns will be added later.
 
-The current assumption for these files is that they are allow you to control motors, in a manner similar to NI MAX. This means no support for dataruns or interface with oscilloscope. Functionality for multiple motors and dataruns will be added later.
+(Note from Sam: This Controller Library is being built from the ground up to allow for multiple motors. It is much harder to add this at a later stage)
 
-(Note from Sam: The Controller Library should be built from the ground up to allow for multiple motors. It would be much harder to add this in at a later stage)
+Any planned functions can be added to these files as is seen fit.
 
-Any planned functions can be added to these files as is seen fit
-
-### File List (in order of priority):
+### File List:
 
 * child.ino
   - Supports every Arduino command of the protocol as outlined in the Google doc
 
-* Controller.py
+* controller.py
   - Based off of the current Controller.py
   - Conducts the serial communications, and contains the base functionality for all of the various protocol commands related to the controller
-  - Communicates with the arduino, as well as ManualControl.py (Controller.py is a python library, which will be used as a base for ManualControl)
+  - Communicates with the arduino for the GUI
 
-* Main.py
-  - Run this file to start the application
-  - This holds all the constants and global variables
-  - It saves and loads itself those variables on shutdown or when requested
-  - Most importantly it knows the current position
-  - Runs Setup.py if it hasn't been run already
-  - This class can do all the unit conversions, according to the rates determined by the user during setup
-  - Directs the user to the appropriate menu (probably ManualControl.py) when the program's initialization is done
+* application.py
+  - The first program that is run when the GUI is started.
+  - Coordinates all actions of the GUI
 
-* Setup.py
-  - Asks for the user to define the calibration values:
-    - Steps per centimeter and/or steps per radian
-  - This will likely be a GUI class
-  - *Later on, this file can be used to set up the different drives for dataruns, grouping them and specifying their ranges of motion*
+* window.py
+  - Some utility functions that allow the GUI to exist, and set up everything for the rest of the GUI files
 
-* ManualControl.py
-  - A GUI class that communicates with Controller.py, and provides NI-MAX functionality
-  - It will ultimately manifest itself as a sidebar, but for now it will probably be the only GUI we have.
-  - Features (which could possibly be translated into functions):
-    - Motor Dashboard that indicates for each motor (in no particular order):
-      - Has it been killed?
-      - Is it moving?
-      - Is it ready?
-      - Has an error occurred?
-    - Movement (which can be converted between centimeters or steps, using the functions of Main.py)
-      - Relative motion
-      - Absolute motion
-      - Requests for movement are then sent to Controller.py
-    - Setting the origin
-      - This information is then stored in the global variables from Main.py
-    - Changing the motor's speed
-    - *Eventually, you'll be able to change between motors*
+* main.css
+  - CSS styling for the GUI
+  
+* MotorControl.py, MotorList.py, WelcomeView.py
+  - Welcome view is what is diaplayed upon opening the application for the first time, when no Arduinos are connected
+  - Motor list is the menu shown for listing each motor
+  - Motor control is the view that can be accessed for each motor from the motor list, allowing you to move the and configue the motors in various ways
+
+* CalibrateDialog.py and NewMotorDialog.py
+  - Calibrate dialog is used for inputting conversions between degrees/centimetres and steps
+  - New motor dialog is used for giving the motor a name, and setting its axis and movement type
+    - Functionality is minimal at this point for these configuration settings
+
+* config.py
+  - Various global infos for the GUI
+
+* labsight-control
+  - A bash file for starting the GUI
+
+* ModeButton.py
+  - A widget for changing between steps and the appropriate unit, while in the motor control view
+
+* encoder.ino
+  - Testing encoder code before moving it to child.ino
+
+* datarun.py
+    - A placeholder file for our later datarun functionality
+
+* __init__.py
+  - Various files necessary for the creation of a Python library
+  - Adds certain features that ease accessing functions from within the library
 
 ## Protocol
 
@@ -83,3 +82,19 @@ Any planned functions can be added to these files as is seen fit
   - kill
   - halt?
   - speed
+  
+## Original Objectives for the GUI:
+  - A GUI class that communicates with controller.py, and provides NI-MAX functionality
+  - It will ultimately manifest itself as a sidebar, but for now it will probably be the only GUI we have.
+  - Features:
+    - Motor Dashboard that indicates for each motor (in no particular order):
+      - Has it been killed?
+      - Is it moving?
+      - Is it ready?
+      - Has an error occurred?
+    - Movement (which can be converted between centimeters or steps)
+      - Relative motion
+      - Absolute motion
+    - Setting the origin
+    - Changing the motor's speed
+    - Ability to change between motors
