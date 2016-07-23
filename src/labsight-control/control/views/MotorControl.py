@@ -5,7 +5,7 @@ from threading import Thread
 import queue
 from control.widgets import ModeButton
 from control.dialogs import NewMotorDialog
-from control.dialogs import CallibrateDialog
+from control.dialogs import CalibrateDialog
 
 # motor control class
 class MotorControl(Gtk.Grid):
@@ -75,7 +75,7 @@ class MotorControl(Gtk.Grid):
         self.type_label.props.use_markup = True
         self.type_label.props.halign = Gtk.Align.START
 
-        self.callibrate_button = Gtk.Button().new_with_label("Calibrate")
+        self.calibrate_button = Gtk.Button().new_with_label("Calibrate")
         self.configure_button = Gtk.Button().new_with_label("Configure")
 
         # attach things to the grid
@@ -83,7 +83,7 @@ class MotorControl(Gtk.Grid):
         info_grid.attach(self.axis_label, 0, 1, 1, 1)
         info_grid.attach(self.type_label, 1, 1, 1, 1)
 
-        button_grid.attach(self.callibrate_button, 0, 0, 1, 1)
+        button_grid.attach(self.calibrate_button, 0, 0, 1, 1)
         button_grid.attach(self.configure_button, 0, 1, 1, 1)
 
          # add grids to box
@@ -173,7 +173,7 @@ class MotorControl(Gtk.Grid):
 
             if self.motor_mover != None:
                 self.motor_mover.join()
-            
+
             # define callback
             def callback(result):
                 self.update_status()
@@ -197,20 +197,20 @@ class MotorControl(Gtk.Grid):
                 while Gtk.events_pending():
                     Gtk.main_iteration()
 
-    def callibrate(self, origin=None, params=None):
+    def calibrate(self, origin=None, params=None):
         if self.motor != None:
-            if self.motor.getProperty("callibrated") == True:
-                dialog = CallibrateDialog(steps=self.motor.getProperty("callibrated-steps"),
-                                        units=self.motor.getProperty("callibrated-units"))
+            if self.motor.getProperty("calibrated") == True:
+                dialog = CalibrateDialog(steps=self.motor.getProperty("calibrated-steps"),
+                                        units=self.motor.getProperty("calibrated-units"))
             else:
-                dialog = CallibrateDialog()
+                dialog = CalibrateDialog()
 
             # define method for applying changes from dialog
             def apply_configurations(event, param=None):
                 # save configurations
-                self.motor.setProperty("callibrated", True)
-                self.motor.setProperty("callibrated-steps", dialog.steps)
-                self.motor.setProperty("callibrated-units", dialog.units)
+                self.motor.setProperty("calibrated", True)
+                self.motor.setProperty("calibrated-steps", dialog.steps)
+                self.motor.setProperty("calibrated-units", dialog.units)
 
                 # destroy dialog
                 dialog.destroy()
@@ -259,7 +259,7 @@ class MotorControl(Gtk.Grid):
     def connect_signals(self):
 
         # connect buttons
-        self.callibrate_button.connect("clicked", self.callibrate)
+        self.calibrate_button.connect("clicked", self.calibrate)
         self.configure_button.connect("clicked", self.configure)
         self.move_button.connect("clicked", self.move)
         self.reset_pos_button.connect("clicked", self.reset_pos)
@@ -278,10 +278,10 @@ class MotorControl(Gtk.Grid):
                     self.use_steps = True
                 else:
                     self.use_steps = False
-                    if not self.motor.getProperty("callibrated"):
+                    if not self.motor.getProperty("calibrated"):
                         self.unit_toggle.set_active("Steps")
-                        self.callibrate()
-                    self.move_entry.props.climb_rate = self.motor.getProperty("callibrated-units") / self.motor.getProperty("callibrated-steps")
+                        self.calibrate()
+                    self.move_entry.props.climb_rate = self.motor.getProperty("calibrated-units") / self.motor.getProperty("calibrated-steps")
 
             self.update_status()
             self.update_move_entry()
@@ -340,7 +340,7 @@ class MotorControl(Gtk.Grid):
             self.move_entry.set_increments(1.0, 1.0)
         else:
             self.move_entry.props.value = self.steps_to_units(float(self.move_entry.props.buffer.props.text))
-            self.move_entry.set_increments(self.motor.getProperty("callibrated-units"), self.motor.getProperty("callibrated-units"))
+            self.move_entry.set_increments(self.motor.getProperty("calibrated-units"), self.motor.getProperty("calibrated-units"))
 
 
     def update_status(self):
@@ -370,10 +370,10 @@ class MotorControl(Gtk.Grid):
             self.update_move_button()
 
     def steps_to_units(self, steps):
-        return round(steps * (self.motor.getProperty("callibrated-units") / self.motor.getProperty("callibrated-steps")), 3)
+        return round(steps * (self.motor.getProperty("calibrated-units") / self.motor.getProperty("calibrated-steps")), 3)
 
     def units_to_steps(self, units):
-        return int(units * (self.motor.getProperty("callibrated-steps") / self.motor.getProperty("callibrated-units")))
+        return int(units * (self.motor.getProperty("calibrated-steps") / self.motor.getProperty("calibrated-units")))
 
     def get_position_units(self):
         if self.use_steps:

@@ -3,7 +3,7 @@
 from gi.repository import Gtk, GObject
 
 # new motor view class
-class CallibrateDialog(Gtk.Dialog):
+class CalibrateDialog(Gtk.Dialog):
 
     # create apply signal
     __gsignals__ = {
@@ -61,7 +61,7 @@ class CallibrateDialog(Gtk.Dialog):
 
         # add actions
         self.add_button("Cancel", Gtk.ResponseType.CLOSE)
-        self.add_button("Callibrate", Gtk.ResponseType.APPLY)
+        self.add_button("Calibrate", Gtk.ResponseType.APPLY)
 
     def get_title_widget(self, string):
         title = Gtk.Label(string)
