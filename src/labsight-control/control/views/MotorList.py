@@ -1,6 +1,6 @@
 
 # imports
-from gi.repository import Gtk, GObject
+from gi.repository import Gtk, GObject, GLib
 from labsight.motor import Motor
 from labsight import controller
 from control.dialogs import NewMotorDialog
@@ -93,26 +93,41 @@ class MotorList(Gtk.Box):
 
         self.progress_bar = Gtk.ProgressBar()
         self.progress_bar.props.hexpand = True
+        self.progress_bar.props.show_text = True
         self.progress_bar.props.text = "Scanning Ports for Attached Motors"
 
+        def pulse():
+            self.progress_bar.pulse()
+            return True
+        GLib.timeout_add(250, pulse)
+
         self.loading_stack.add_named(self.progress_bar, "progress")
+
+        # connect refresh button signal
+        def clicked(origin=None, props=None):
+            self.start_load()
+
+        self.refresh_button.connect("clicked", clicked)
 
     def load_from_files(self):
         file_list = os.listdir(config.MOTOR_CONFIG_DIR)
         for f in file_list:
             (mid, ext) = f.split(".")
             if ext == "yml" or ext == "yaml":
-                m = Motor(config.MOTOR_CONFIG_DIR, None, mid)
+                if mid not in self.motors:
+                    m = Motor(config.MOTOR_CONFIG_DIR, None, mid)
 
-                motor_list_child = MotorListChild(m)
-                def f(motor):
-                    self.emit("control-motor", motor)
-                motor_list_child.control_callback = f
+                    motor_list_child = MotorListChild(m)
+                    def f(motor):
+                        self.emit("control-motor", motor)
+                    motor_list_child.control_callback = f
 
-                self.motors[mid] = motor_list_child
-                self.list_box.insert(motor_list_child, -1)
+                    self.motors[mid] = motor_list_child
+                    self.list_box.insert(motor_list_child, -1)
 
     def start_load(self):
+
+        self.loading_stack.set_visible_child_name("progress")
 
         self.load_from_files()
 
@@ -135,12 +150,21 @@ class MotorList(Gtk.Box):
 
     def end_load(self, result):
 
-        for mid in result:
-            if mid in self.motors:
+        # loop through our created motor objects
+        for mid in self.motors:
+            # check to see if their id is in the result, if so, connect their serial otherwise disconnect it
+            if mid in result:
                 self.motors[mid].connect_serial(result[mid])
+                del result[mid]
             else:
-                self.load_from_files()
-                self.end_load(result)
+                self.motors[mid].disconnect_serial()
+
+        # if we still have results left, load from files and rerun this method
+        if len(result) > 0:
+            self.load_from_files()
+            self.end_load(result)
+
+        self.loading_stack.set_visible_child_name("refresh")
 
         self.serial_queue = None
         self.emit("done-loading")
@@ -368,4 +392,11 @@ class MotorListChild(Gtk.ListBoxRow):
 
     def connect_serial(self, serial):
         self.motor.serial = serial
+        self.update_ui()
+
+    def disconnect_serial(self):
+        if self.motor.serial != None:
+            self.motor.serial.close()
+
+        self.motor.serial = None
         self.update_ui()
