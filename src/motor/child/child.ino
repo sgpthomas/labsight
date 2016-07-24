@@ -17,8 +17,8 @@ bool stream = false;
 
 // encoder pins
 int encoderA = 4;
-int encoderAm = 5;
-int encoderB = 6;
+int encoderAm = 6;
+int encoderB = 5;
 int encoderBm = 7;
 
 // encoder position and previous encoder pin sum
@@ -124,41 +124,44 @@ int binaryToDecimal(int a, int b) {
 void updateEncoderPos() {
   int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
 
-  switch(encoderSum) {
-    case 1:
-      if (prevEncoderSum == 3) {
-        encoderPos ++;
-      } else {
-        encoderPos --;
-      }
-      break;
-      
-    case 0:
-      if (prevEncoderSum == 1) {
-        encoderPos ++;
-      } else {
-        encoderPos --;
-      }
-      break;
-
-    case 2:
-      if (prevEncoderSum == 0) {
-        encoderPos ++;
-      } else {
-        encoderPos --;
-      }
-      break;
-
-    case 3:
-      if (prevEncoderSum == 2) {
-        encoderPos ++;
-      } else {
-        encoderPos --;
-      }
-      break;
+//  Serial.println(binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB)));
+  if (encoderSum != prevEncoderSum) {
+    switch(encoderSum) {
+      case 1:
+        if (prevEncoderSum == 0) {
+          encoderPos ++;
+        } else if (prevEncoderSum == 3) {
+          encoderPos --;
+        }
+        break;
+        
+      case 0:
+        if (prevEncoderSum == 2) {
+          encoderPos ++;
+        } else if (prevEncoderSum == 1) {
+          encoderPos --;
+        }
+        break;
+  
+      case 2:
+        if (prevEncoderSum == 3) {
+          encoderPos ++;
+        } else if (prevEncoderSum == 0) {
+          encoderPos --;
+        }
+        break;
+  
+      case 3:
+        if (prevEncoderSum == 1) {
+          encoderPos ++;
+        } else if (prevEncoderSum == 2) {
+          encoderPos --;
+        }
+        break;
+    }
+    prevEncoderSum = encoderSum;
+    Serial.println(encoderPos);
   }
-
-  Serial.println(encoderPos);
 }
 
 String join(String symbol, String command, String data) {
@@ -302,7 +305,7 @@ void receivedMessage(String symbol, String command, String data) {
 }
 
 void loop() {
-
+updateEncoderPos();
 }
 
 
