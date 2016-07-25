@@ -1,7 +1,6 @@
 @define-color insensitive_color mix(@text_color, @bg_color, 0.6);
 @define-color insensitive_bg_color #f4f4f2;
 
-
 .welcome-header {
     font: Open Sans 24px;
 }
