@@ -142,11 +142,18 @@ int binaryToDecimal(int a, int b) {
 
 void updateEncoderPos() {
   if (steps_to_move != 0) {
-    Serial.println(join(Symbol.STREAM, Command.STEP, String(steps_to_move)));
+    if (steps_to_move < 0) {
+      encoderPos --;
+    } else {
+      encoderPos ++;
+    }
+    Serial.println(join(Symbol.STREAM, Command.STEP, String(encoderPos)));
+  } else if (encoderPos != 0) {
+    encoderPos = 0;
   }
 }
 
-void updateEncoderPosRight() {
+void updateEncoderPosCorrect() {
   int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
 
 //  Serial.println(binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB)));
