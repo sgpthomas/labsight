@@ -101,10 +101,6 @@ void setup() {
   pinMode(encoderBm, INPUT);
   // digitalWrite(encoderBm, HIGH);
 
-  // attach interrupt to keep track of position
-//  attachInterrupt(digitalPinToInterrupt(encoderA), updateEncoderPos, CHANGE);
-//  attachInterrupt(digitalPinToInterrupt(encoderB), updateEncoderPos, CHANGE);
-
   // initalize prevEncoderSum
 //  prevEncoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
 
@@ -156,7 +152,6 @@ void updateEncoderPos() {
 void updateEncoderPosCorrect() {
   int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
 
-//  Serial.println(binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB)));
   if (encoderSum != prevEncoderSum) {
     switch(encoderSum) {
       case 1:
@@ -192,7 +187,7 @@ void updateEncoderPosCorrect() {
         break;
     }
     prevEncoderSum = encoderSum;
-    // Serial.println(encoderPos);
+    Serial.println(join(Symbol.STREAM, Command.STEP, String(encoderPos)));  
   }
 }
 
