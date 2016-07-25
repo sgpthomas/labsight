@@ -416,7 +416,6 @@ class MotorMover(Thread):
         def queue_move(pos):
             self.queue.put(lambda: self.move_func(pos))
 
-        # res = self.motor.setStep(self.step, self.move_func)
         res = self.motor.setStep(self.step, queue_move)
 
         if self.callback != None:
