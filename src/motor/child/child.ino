@@ -10,7 +10,7 @@ String id = "";
 int LED = 13;
 
 // version number
-String version_number = "0.4";
+String version_number = "0.5";
 
 // encoder pins
 int encoderA = 4;
@@ -51,6 +51,7 @@ struct com {
   String SPEED = "speed";
   String VERSION = "version";
   String STYLE = "style";
+  String HALT = "halt";
 };
 
 com Command;
@@ -62,6 +63,8 @@ struct dat {
 dat Data;
 
 bool erred = false;
+
+bool moving = false;
 
 String readID() {
   char value;
@@ -199,14 +202,23 @@ String setStep(String distance, uint8_t style = current_style) {
     dir = BACKWARD;
   }
   int index;
+  moving = true;
   for (int i = 0; i < abs(distance.toInt()); i++) {
-    motor->step(1, dir, style);
-    index = i;
-    if (dir == BACKWARD) {
-      index *= -1;
+    Serial.println(String(moving));
+    if (moving == true) {
+      motor->step(1, dir, style);
+      index = i;
+      if (dir == BACKWARD) {
+        index *= -1;
+      }
+      Serial.println(join(Symbol.STREAM, Command.STEP, String(index)));
     }
-    Serial.println(join(Symbol.STREAM, Command.STEP, String(index)));
+    else {
+      moving = false;
+      return String(index);
+    }
   }
+  moving = false;
   return distance;
 }
 
@@ -231,6 +243,15 @@ String setStyle(String style) {
   else {
     erred = true;
   }
+}
+
+String setHalt() {
+  if (moving == true) {
+    Serial.println("halted?");
+    moving = false;
+  }
+  Serial.println("halted????");
+  return Data.NIL;
 }
 
 void serialEvent() {
@@ -283,6 +304,10 @@ void receivedMessage(String symbol, String command, String data) {
     } 
     else if (command == Command.STYLE) {
       respond_data = setStyle(data);
+    }
+    else if (command == Command.HALT) {
+      moving = false; // Method 2
+      respond_data = setHalt(); // Method 1
     }
     else {
       respond_symbol = Symbol.ERROR;

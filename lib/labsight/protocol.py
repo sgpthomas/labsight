@@ -20,6 +20,7 @@ class Command:
     SPEED = "speed"
     VERSION = "version"
     STYLE = "style"
+    HALT = "halt"
 
 """ Data """
 class Data:

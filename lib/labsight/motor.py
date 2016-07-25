@@ -128,6 +128,11 @@ class Motor(object):
     def getStyle(self,style):
         return self.properties["style"]
 
+    def setHalt(self):
+            msg = controller.Message(Symbol.SET, Command.HALT, Data.NIL)
+            ret = self.sendMessage(msg)
+            return ret
+
     def setProperty(self, property_name, value):
         # allows something like the GUI to store it's own data in the YAML file
         self.properties[property_name] = value

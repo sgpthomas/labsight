@@ -6,7 +6,7 @@ from time import sleep
 from labsight.motor import Motor
 from labsight.protocol import Symbol, Command, Data, Message, sendMessage
 
-lib_version = "0.4"
+lib_version = "0.5"
 
 # This is outside of a function so that it is accessible to every function here, as it needs to be
 motor_objects = {}
