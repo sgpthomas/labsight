@@ -129,7 +129,7 @@ class Motor(object):
         return self.properties["style"]
 
     def setHalt(self):
-            msg = controller.Message(Symbol.SET, Command.HALT, Data.NIL)
+            msg = Message(Symbol.SET, Command.HALT, Data.NIL)
             ret = self.sendMessage(msg)
             return ret
 

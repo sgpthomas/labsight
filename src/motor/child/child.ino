@@ -19,7 +19,7 @@ int encoderB = 5;
 int encoderBm = 7;
 
 // encoder position and previous encoder pin sum
-volatile unsigned int encoderPos = 0;
+int encoderPos = 0;
 int prevEncoderSum = 0;
 
 // Hardware objects
@@ -63,6 +63,7 @@ bool erred = false;
 
 // bool moving = false;
 int steps_to_move = 0;
+String queue_response = "";
 
 String readID() {
   char value;
@@ -100,6 +101,10 @@ void setup() {
 
   pinMode(encoderBm, INPUT);
   // digitalWrite(encoderBm, HIGH);
+
+  // attach interrupt to keep track of position
+//  attachInterrupt(digitalPinToInterrupt(encoderA), updateEncoderPos, CHANGE);
+//  attachInterrupt(digitalPinToInterrupt(encoderB), updateEncoderPos, CHANGE);
 
   // initalize prevEncoderSum
 //  prevEncoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
@@ -152,6 +157,7 @@ void updateEncoderPos() {
 void updateEncoderPosCorrect() {
   int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
 
+//  Serial.println(binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB)));
   if (encoderSum != prevEncoderSum) {
     switch(encoderSum) {
       case 1:
@@ -187,7 +193,7 @@ void updateEncoderPosCorrect() {
         break;
     }
     prevEncoderSum = encoderSum;
-    Serial.println(join(Symbol.STREAM, Command.STEP, String(encoderPos)));  
+    // Serial.println(encoderPos);
   }
 }
 
@@ -224,8 +230,8 @@ String setStep(String distance, uint8_t style = current_style) {
     return distance;
   }
 
-  // set steps to move
-  steps_to_move = distance.toInt();
+  // set steps to move and add one so that it actually moves the right number of steps
+  steps_to_move = distance.toInt() + (distance.toInt() / abs(distance.toInt()));
   
   return distance;
 }
@@ -322,12 +328,23 @@ void receivedMessage(String symbol, String command, String data) {
     respond_symbol = Symbol.ERROR;
   }
 
-  Serial.println(join(respond_symbol, respond_command, respond_data));
+  String response = join(respond_symbol, respond_command, respond_data);
+
+  if (steps_to_move != 0) {
+    queue_response = response;
+  } else {
+    Serial.println(response);
+  }
 }
 
 void loop() {
   updateMotorPos();
   updateEncoderPos();
+
+  if (steps_to_move == 0 && queue_response != "") {
+    Serial.println(queue_response);
+    queue_response = "";
+  }
 }
 
 
