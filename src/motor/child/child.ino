@@ -23,12 +23,9 @@ volatile unsigned int encoderPos = 0;
 int prevEncoderSum = 0;
 
 // Hardware objects
-
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-
 // Connect a stepper motor with 200 steps per revolution (1.8 degree)
 // to motor port #1 (M1 and M2)
-
 Adafruit_StepperMotor *motor = AFMS.getStepper(200, 1);
 
 uint8_t current_style = SINGLE;
@@ -64,7 +61,8 @@ dat Data;
 
 bool erred = false;
 
-bool moving = false;
+// bool moving = false;
+int steps_to_move = 0;
 
 String readID() {
   char value;
@@ -117,11 +115,38 @@ void setup() {
   motor->setSpeed(default_speed);
 }
 
+void updateMotorPos() {
+  if (steps_to_move != 0) {
+
+    // set direction 
+    uint8_t dir = FORWARD;
+    if (steps_to_move < 0) {
+      dir = BACKWARD;
+    }
+
+    // move motor one step in the right direction
+    motor->step(1, dir, current_style);
+
+    // update steps_to_move
+    if (dir == FORWARD) {
+      steps_to_move --;
+    } else if (dir == BACKWARD) {
+      steps_to_move ++;
+    }
+  }
+}
+
 int binaryToDecimal(int a, int b) {
   return (a*2 + b*1);
 }
 
 void updateEncoderPos() {
+  if (steps_to_move != 0) {
+    Serial.println(join(Symbol.STREAM, Command.STEP, String(steps_to_move)));
+  }
+}
+
+void updateEncoderPosRight() {
   int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
 
 //  Serial.println(binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB)));
@@ -196,29 +221,10 @@ String setStep(String distance, uint8_t style = current_style) {
     erred = true;
     return distance;
   }
+
+  // set steps to move
+  steps_to_move = distance.toInt();
   
-  uint8_t dir = FORWARD;
-  if (distance.toInt() < 0) {
-    dir = BACKWARD;
-  }
-  int index;
-  moving = true;
-  for (int i = 0; i < abs(distance.toInt()); i++) {
-    Serial.println(String(moving));
-    if (moving == true) {
-      motor->step(1, dir, style);
-      index = i;
-      if (dir == BACKWARD) {
-        index *= -1;
-      }
-      Serial.println(join(Symbol.STREAM, Command.STEP, String(index)));
-    }
-    else {
-      moving = false;
-      return String(index);
-    }
-  }
-  moving = false;
   return distance;
 }
 
@@ -246,11 +252,7 @@ String setStyle(String style) {
 }
 
 String setHalt() {
-  if (moving == true) {
-    Serial.println("halted?");
-    moving = false;
-  }
-  Serial.println("halted????");
+  steps_to_move = 0;
   return Data.NIL;
 }
 
@@ -306,7 +308,7 @@ void receivedMessage(String symbol, String command, String data) {
       respond_data = setStyle(data);
     }
     else if (command == Command.HALT) {
-      moving = false; // Method 2
+      // moving = false; // Method 2
       respond_data = setHalt(); // Method 1
     }
     else {
@@ -322,6 +324,7 @@ void receivedMessage(String symbol, String command, String data) {
 }
 
 void loop() {
+  updateMotorPos();
   updateEncoderPos();
 }
 
