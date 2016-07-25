@@ -76,20 +76,22 @@ class NewMotorDialog(Gtk.Dialog):
         grid.attach(description, 0, 5, 1, 1)
         grid.attach(self.type_combo, 1, 4, 1, 2)
 
-        # save configuration
-        # self.save_button = Gtk.Button().new_with_label("Save Configuration")
-        # grid.attach(self.save_button, 0, 6, 2, 1)
+        # watch for changes in all the things
+        def buffer_changed(origin=None, prop=None):
+            if prop.name == "text":
+                self.update_actions()
+        self.name.props.buffer.connect("notify", buffer_changed)
 
-        # create scrolled box, add grid to it, add scroll to self
-        # scroll = Gtk.ScrolledWindow()
-        # scroll.props.expand = True
-        # scroll.add(grid)
+        self.axis_combo.connect("changed", self.update_actions)
+        self.type_combo.connect("changed", self.update_actions)
 
         self.get_content_area().add(grid)
 
         # add actions
         self.add_button("Cancel", Gtk.ResponseType.CLOSE)
         self.add_button("Save", Gtk.ResponseType.APPLY)
+
+        self.update_actions()
 
     def get_title_widget(self, string):
         title = Gtk.Label(string)
@@ -106,6 +108,19 @@ class NewMotorDialog(Gtk.Dialog):
         description.get_style_context().add_class("new-motor-description")
 
         return description
+
+    def update_actions(self, event=None, param=None):
+        sensitive = True
+        if self.name.props.text == "" or self.name.props.text == None:
+            sensitive = False
+
+        if self.axis_combo.get_active_text() == None:
+            sensitive = False
+
+        if self.type_combo.get_active_text() == None:
+            sensitive = False
+
+        self.get_widget_for_response(Gtk.ResponseType.APPLY).props.sensitive = sensitive
 
     def on_response(self, event, param=None):
         if param == Gtk.ResponseType.CLOSE:
