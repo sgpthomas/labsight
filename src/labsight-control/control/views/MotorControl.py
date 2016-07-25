@@ -142,11 +142,18 @@ class MotorControl(Gtk.Grid):
         self.move_entry = Gtk.SpinButton().new_with_range(-20000.0, 20000.0, 0.1)
         self.move_entry.props.width_request = 160
         self.move_entry.props.orientation = Gtk.Orientation.HORIZONTAL
+
         self.move_button = Gtk.Button().new_with_label("Move")
+        self.move_button.props.no_show_all = True
+
+        self.halt_button = Gtk.Button().new_with_label("Halt")
+        self.halt_button.props.no_show_all = True
+        self.halt_button.get_style_context().add_class("destructive-action")
 
         control_grid.attach(self.type_modebutton, 0, -1, 1, 1)
         control_grid.attach(self.move_entry, 0, 0, 1, 1)
         control_grid.attach(self.move_button, 0, 1, 1, 1)
+        control_grid.attach(self.halt_button, 0, 2, 1, 1)
 
         self.attach(padding_box, 0, 0, 2, 1)
         self.attach(self.unit_toggle, 0, 1, 2, 1)
@@ -182,7 +189,9 @@ class MotorControl(Gtk.Grid):
             self.relative_target = self.get_relative_target()
 
             # set button to be insenstive
-            self.move_button.props.sensitive = False
+            # self.move_button.props.sensitive = False
+            self.move_button.hide()
+            self.halt_button.show()
 
             self.queue = queue.Queue()
 
@@ -196,6 +205,9 @@ class MotorControl(Gtk.Grid):
 
                 while Gtk.events_pending():
                     Gtk.main_iteration()
+
+    def halt(self, origin=None, param=None):
+        self.motor.setHalt()
 
     def calibrate(self, origin=None, params=None):
         if self.motor != None:
@@ -262,6 +274,7 @@ class MotorControl(Gtk.Grid):
         self.calibrate_button.connect("clicked", self.calibrate)
         self.configure_button.connect("clicked", self.configure)
         self.move_button.connect("clicked", self.move)
+        self.halt_button.connect("clicked", self.halt)
         self.reset_pos_button.connect("clicked", self.reset_pos)
 
         # update move position on all text changess
@@ -365,7 +378,9 @@ class MotorControl(Gtk.Grid):
 
             # update entry
             self.move_entry.props.progress_fraction = 0
-            self.move_button.props.sensitive = True
+            # self.move_button.props.sensitive = True
+            self.move_button.show()
+            self.halt_button.hide()
 
             self.update_move_button()
 
