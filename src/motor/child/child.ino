@@ -12,9 +12,6 @@ int LED = 13;
 // version number
 String version_number = "0.4";
 
-// is streaming?
-bool stream = false;
-
 // encoder pins
 int encoderA = 4;
 int encoderAm = 6;
@@ -160,7 +157,7 @@ void updateEncoderPos() {
         break;
     }
     prevEncoderSum = encoderSum;
-    Serial.println(encoderPos);
+    // Serial.println(encoderPos);
   }
 }
 
@@ -197,7 +194,6 @@ String setStep(String distance, uint8_t style = current_style) {
     return distance;
   }
   
-  stream = true;
   uint8_t dir = FORWARD;
   if (distance.toInt() < 0) {
     dir = BACKWARD;
@@ -209,12 +205,8 @@ String setStep(String distance, uint8_t style = current_style) {
     if (dir == BACKWARD) {
       index *= -1;
     }
-    // String test = String(index) + " " + String(digitalRead(encoderAm)) + " " + String(digitalRead(encoderAm)) + " " + String(digitalRead(encoderBm)) + " " + String(digitalRead(encoderBm));
     Serial.println(join(Symbol.STREAM, Command.STEP, String(index)));
-    // Serial.println(join(Symbol.STREAM, Command.STEP, test));
-    // delay(250);
   }
-  stream = false;
   return distance;
 }
 
@@ -242,7 +234,7 @@ String setStyle(String style) {
 }
 
 void serialEvent() {
-  if (Serial.available() && !stream) {
+  if (Serial.available()) {
     String symbol = Serial.readStringUntil(' ');
     String command = Serial.readStringUntil(' ');
     String data = Serial.readStringUntil('\n');
@@ -305,7 +297,7 @@ void receivedMessage(String symbol, String command, String data) {
 }
 
 void loop() {
-updateEncoderPos();
+  updateEncoderPos();
 }
 
 
