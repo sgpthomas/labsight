@@ -76,8 +76,9 @@ def establishComms(ser):
         return False
 
     # check to make sure that returned lib_version matches ours
-    if (response.data == lib_version):
-        return True
+    if (response.data != lib_version):
+        print("Arduino returned version: {} instead of version: {}".format(response.data, lib_version))
+        return False
 
-    # communications have not been established
-    return False
+    # communications have been established
+    return True

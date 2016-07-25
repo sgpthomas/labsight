@@ -154,6 +154,8 @@ class MotorControl(Gtk.Grid):
         control_grid.attach(self.move_entry, 0, 0, 1, 1)
         control_grid.attach(self.move_button, 0, 1, 1, 1)
         control_grid.attach(self.halt_button, 0, 2, 1, 1)
+        control_grid.attach(Gtk.Separator(), 0, 3, 1, 3)
+        control_grid.attach(Gtk.Label("Set Speed (NYI)"), 0, 6, 1, 1)
 
         self.attach(padding_box, 0, 0, 2, 1)
         self.attach(self.unit_toggle, 0, 1, 2, 1)
