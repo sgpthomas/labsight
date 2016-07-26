@@ -73,6 +73,7 @@ def establishComms(ser):
     try:
         response = sendMessage (Message(Symbol.GET, Command.VERSION, Data.NIL), ser)
     except:
+        print("no reponse")
         return False
 
     # check to make sure that returned lib_version matches ours
@@ -82,3 +83,4 @@ def establishComms(ser):
 
     # communications have been established
     return True
+    
