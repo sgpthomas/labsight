@@ -91,10 +91,8 @@ void setup() {
 
   // setup encoder pins and turn on internal pull-up resistor
   pinMode(encoderA, INPUT);
-  // digitalWrite(encoderA, LOW);
 
   pinMode(encoderB, INPUT);
-  // digitalWrite(encoderB, HIGH);
 
   pinMode(encoderAm, INPUT);
   // digitalWrite(encoderAm, HIGH);
@@ -141,7 +139,7 @@ int binaryToDecimal(int a, int b) {
   return (a*2 + b*1);
 }
 
-void updateEncoderPos() {
+void updateEncoderPosFake() {
   if (steps_to_move != 0) {
     if (steps_to_move < 0) {
       encoderPos --;
@@ -154,46 +152,49 @@ void updateEncoderPos() {
   }
 }
 
-void updateEncoderPosCorrect() {
-  int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
+void updateEncoderPos() {
+  if (steps_to_move != 0) {
+    int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
 
-//  Serial.println(binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB)));
-  if (encoderSum != prevEncoderSum) {
-    switch(encoderSum) {
-      case 1:
-        if (prevEncoderSum == 0) {
-          encoderPos ++;
-        } else if (prevEncoderSum == 3) {
-          encoderPos --;
-        }
-        break;
-        
-      case 0:
-        if (prevEncoderSum == 2) {
-          encoderPos ++;
-        } else if (prevEncoderSum == 1) {
-          encoderPos --;
-        }
-        break;
-  
-      case 2:
-        if (prevEncoderSum == 3) {
-          encoderPos ++;
-        } else if (prevEncoderSum == 0) {
-          encoderPos --;
-        }
-        break;
-  
-      case 3:
-        if (prevEncoderSum == 1) {
-          encoderPos ++;
-        } else if (prevEncoderSum == 2) {
-          encoderPos --;
-        }
-        break;
+    if (encoderSum != prevEncoderSum) {
+      switch(encoderSum) {
+        case 1:
+          if (prevEncoderSum == 0) {
+            encoderPos ++;
+          } else if (prevEncoderSum == 3) {
+            encoderPos --;
+          }
+          break;
+          
+        case 0:
+          if (prevEncoderSum == 2) {
+            encoderPos ++;
+          } else if (prevEncoderSum == 1) {
+            encoderPos --;
+          }
+          break;
+    
+        case 2:
+          if (prevEncoderSum == 3) {
+            encoderPos ++;
+          } else if (prevEncoderSum == 0) {
+            encoderPos --;
+          }
+          break;
+    
+        case 3:
+          if (prevEncoderSum == 1) {
+            encoderPos ++;
+          } else if (prevEncoderSum == 2) {
+            encoderPos --;
+          }
+          break;
+      }
+      prevEncoderSum = encoderSum;
+      Serial.println(join(Symbol.STREAM, Command.STEP, String(encoderPos) + " " + String(steps_to_move) + " " + String(digitalRead(encoderA)) + String(digitalRead(encoderB))));
     }
-    prevEncoderSum = encoderSum;
-    // Serial.println(encoderPos);
+  } else if (encoderPos != 0) {
+    encoderPos = 0;
   }
 }
 
