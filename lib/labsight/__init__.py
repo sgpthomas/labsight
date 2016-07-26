@@ -1,2 +1,3 @@
 from labsight.controller import motors
 from labsight.controller import getAttachedSerials
+from labsight.controller import createDefaultConfigDirectory
