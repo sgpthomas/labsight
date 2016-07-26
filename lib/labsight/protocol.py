@@ -45,6 +45,11 @@ class Message:
         return " ".join([self.symbol,self.command,self.data])
 
 def sendMessage(msg, ser, move_func=None, callback=None):
+
+    if callback == True:
+        MessengerPigeon(msg, ser, move_func).start()
+        return
+
     if callback != None:
         MessengerPigeon(msg, ser, move_func, callback).start()
         return
@@ -57,7 +62,7 @@ def sendMessage(msg, ser, move_func=None, callback=None):
     pigeon = MessengerPigeon(msg, ser, move_func, default_callback)
     pigeon.start()
     pigeon.join()
-    
+
     global msg_response
     return msg_response
 
@@ -110,7 +115,7 @@ class MessengerPigeon(Thread):
                     self.move_func(last_response)
                 # response.append(last_response)
             response = last_response
-        
+
         # give response to the callback function
         if self.callback != None:
             self.callback(response)

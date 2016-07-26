@@ -13,10 +13,8 @@ int LED = 13;
 String version_number = "0.5";
 
 // encoder pins
-int encoderA = 4;
-int encoderAm = 6;
-int encoderB = 5;
-int encoderBm = 7;
+int encoderA = 8;
+int encoderB = 11;
 
 // encoder position and previous encoder pin sum
 int encoderPos = 0;
@@ -89,25 +87,10 @@ void setup() {
   Serial.begin(9600);
   pinMode(LED, OUTPUT);
 
-  // setup encoder pins and turn on internal pull-up resistor
+  // setup encoder pins
   pinMode(encoderA, INPUT);
-  // digitalWrite(encoderA, LOW);
 
   pinMode(encoderB, INPUT);
-  // digitalWrite(encoderB, HIGH);
-
-  pinMode(encoderAm, INPUT);
-  // digitalWrite(encoderAm, HIGH);
-
-  pinMode(encoderBm, INPUT);
-  // digitalWrite(encoderBm, HIGH);
-
-  // attach interrupt to keep track of position
-//  attachInterrupt(digitalPinToInterrupt(encoderA), updateEncoderPos, CHANGE);
-//  attachInterrupt(digitalPinToInterrupt(encoderB), updateEncoderPos, CHANGE);
-
-  // initalize prevEncoderSum
-//  prevEncoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
 
   id = readID();
 
@@ -157,7 +140,6 @@ void updateEncoderPos() {
 void updateEncoderPosCorrect() {
   int encoderSum = binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB));
 
-//  Serial.println(binaryToDecimal(digitalRead(encoderA), digitalRead(encoderB)));
   if (encoderSum != prevEncoderSum) {
     switch(encoderSum) {
       case 1:
@@ -257,6 +239,7 @@ String setStyle(String style) {
   else {
     erred = true;
   }
+  return style;
 }
 
 String setHalt() {
@@ -316,8 +299,7 @@ void receivedMessage(String symbol, String command, String data) {
       respond_data = setStyle(data);
     }
     else if (command == Command.HALT) {
-      // moving = false; // Method 2
-      respond_data = setHalt(); // Method 1
+      respond_data = setHalt();
     }
     else {
       respond_symbol = Symbol.ERROR;
