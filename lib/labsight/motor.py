@@ -18,7 +18,7 @@ class Motor(object):
         self.path = os.path.join(config_folder, self.filename)
         self.defaults = {"id":self.id,"motor_port":self.motor_port,"step":0,"style":Data.SINGLE}
         file_list = os.listdir(config_folder)
-        if self.filename in file_list:
+        if filename in file_list:
             self.loadProperties()
         else:
             self.newProperties()
@@ -153,3 +153,6 @@ class Motor(object):
 
     def hasProperty(self, property_name):
         return property_name in self.properties
+
+    def remove(self):
+        os.remove(self.path)
