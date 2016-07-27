@@ -7,7 +7,7 @@
 String version_number = "0.6";
 
 // identity
-String id[2] = {"",""};
+String id[2] = {"", ""};
 
 // encoder pins for motor 1
 int encoderPinA[2] = {2, 4};
@@ -70,7 +70,7 @@ dat Data;
 
 /* ----------------Update Functions---------------- */
 
-void updateMotorPos(String motor_stringdex = Motor.ZERO) {
+void updateMotorPos(String motor_stringdex) {
   uint8_t dir;
   int motor_index = motor_stringdex.toInt();
 
@@ -108,7 +108,7 @@ void updateMotorPos(String motor_stringdex = Motor.ZERO) {
 //  }
 //}
 
-void updateEncoderPos(String motor_stringdex = Motor.ZERO) {
+void updateEncoderPos(String motor_stringdex) {
   int motor_index = motor_stringdex.toInt();
 //  if (steps_to_move1 != 0) {
   int deltaEncoderPos = 0;
@@ -167,7 +167,7 @@ int binaryToDecimal(int a, int b) {
   return (a*2 + b*1);
 }
 
-String readID(String motor_index = Motor.ZERO) {
+String readID(String motor_index) {
   char value;
   int address = 0;
   if (motor_index == Motor.ONE) {
@@ -191,7 +191,7 @@ String readID(String motor_index = Motor.ZERO) {
 
 /* ----------------Getter Functions---------------- */
 
-String getID(String motor_stringdex = Motor.ZERO) {
+String getID(String motor_stringdex) {
   return id[motor_stringdex.toInt()];
 }
 
@@ -201,7 +201,7 @@ String getVersion() {
 
 /* ----------------Setter Functions---------------- */
 
-String setID(String new_id, String motor_stringdex = Motor.ZERO) {
+String setID(String new_id, String motor_stringdex) {
   int start_index = 0;
   if (motor_stringdex == Motor.ONE) {
     start_index += 511;
@@ -235,7 +235,7 @@ String setKill(String motor_stringdex = Motor.ZERO) {
   return Data.NIL;
 }
 
-String setStyle(String new_style, String motor_stringdex = Motor.ZERO) {
+String setStyle(String new_style, String motor_stringdex) {
   int motor_index = motor_stringdex.toInt();
   if (new_style == "single") {
     style[motor_index] = SINGLE;
