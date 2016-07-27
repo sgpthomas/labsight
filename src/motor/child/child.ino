@@ -2,33 +2,40 @@
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
+#include <stdarg.h>
 
 // version number
 String version_number = "0.6";
 
 // identity
-String id [2]= {"",""};
+String id[2] = {"",""};
 
 // encoder pins for motor 1
-int encoderPinA [2] = {2,4};
-int encoderPinB [2] = {3,5};
+int encoderPinA[2] = {2, 4};
+int encoderPinB[2] = {3, 5};
 
 // encoder position and previous encoder pin sum
-int encoderPos [2] = {0,0};
-int prevEncoderSum [2] = {0,0};
+int encoderPos[2] = {0, 0};
+int prevEncoderSum[2] = {0, 0};
 
 // Hardware objects
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-// Connect a stepper motor with 200 steps per revolution (1.8 degree)
-// to motor port #1 (M1 and M2)
-Adafruit_StepperMotor *motor0 = AFMS.getStepper(200, 1);
-Adafruit_StepperMotor *motor1 = AFMS.getStepper(200, 2);
+// Adafruit_StepperMotor *motor0 = ;
+// Adafruit_StepperMotor *motor1 = ;
+Adafruit_StepperMotor *motor[2] = {AFMS.getStepper(200, 1), AFMS.getStepper(200, 2)};
 
-Adafruit_StepperMotor *motor [2] = {motor0, motor1};
-
-uint8_t style [2] = {SINGLE,SINGLE};
+// default motor settings
+uint8_t style[2] = {SINGLE, SINGLE};
 uint16_t default_speed = 60;
 
+// motor movement variables
+int steps_to_move[2] = {0, 0};
+String queue_response[2] = {"", ""};
+
+// for sending errors
+bool erred = false;
+
+/* Hacky Enums */
 struct sym {
   String GET = "?";
   String SET = "!";
@@ -36,15 +43,13 @@ struct sym {
   String STREAM = ">";
   String ERROR = "@";
 };
-
-sym Symbol; // This and the other one below it is a bit hacky, but who cares
+sym Symbol;
 
 struct mot {
   String NIL = "_";
   String ZERO = "0";
   String ONE = "1";
 };
-
 mot Motor;
 
 struct com {
@@ -57,64 +62,14 @@ struct com {
   String STYLE = "style";
   String HALT = "halt";
 };
-
 com Command;
 
 struct dat {
   String NIL = "_";
 };
-
 dat Data;
 
-bool erred = false;
-
-int steps_to_move [2] = {0,0};
-
-String queue_response [2] = {"",""};
-
-String readID(String motor_index = Motor.ZERO) {
-  char value;
-  int address = 0;
-  if (motor_index == Motor.ONE) {
-    address += 511;
-  }
-  String reading_id = "";
-  while (true) { // loop
-    value = EEPROM.read(address);
-    
-    if (value != 0 && byte(value) != 255) { // value is not null
-      reading_id += value;
-    } else {
-      break;
-    }
-    
-    address++;
-  }
-  
-  return reading_id;
-}
-
-void setup() {
-  // Turn that damn LED off
-  pinMode(13, OUTPUT);
-  
-  Serial.begin(9600);
-
-  // setup encoder pins
-  pinMode(encoderPinA[1], INPUT);
-  pinMode(encoderPinB[1], INPUT);
-
-  pinMode(encoderPinA[2], INPUT);
-  pinMode(encoderPinB[2], INPUT);
-
-  id[0] = readID(Motor.ZERO);
-  id[1] = readID(Motor.ONE);
-
-  // Set up motor hardware
-  AFMS.begin();
-  motor[0]->setSpeed(default_speed);
-  motor[1]->setSpeed(default_speed);
-}
+/* ----------------Update Functions---------------- */
 
 void updateMotorPos(String motor_stringdex = Motor.ZERO) {
   uint8_t dir;
@@ -138,10 +93,6 @@ void updateMotorPos(String motor_stringdex = Motor.ZERO) {
     }
     Serial.println(join(Symbol.STREAM, motor_stringdex, Command.STEP, String(steps_to_move[motor_index])));
   }
-}
-
-int binaryToDecimal(int a, int b) {
-  return (a*2 + b*1);
 }
 
 // This function's kinda broken now that there are multiple motors
@@ -207,11 +158,39 @@ void updateEncoderPos(String motor_stringdex = Motor.ZERO) {
 //  }
 }
 
+/* -----------------Misc Functions----------------- */
+
 String join(String symbol, String motor, String command, String data) {
   return symbol + " " + motor + " " + command + " " + data;
 }
 
-// ----------------Getter Functions----------------
+int binaryToDecimal(int a, int b) {
+  return (a*2 + b*1);
+}
+
+String readID(String motor_index = Motor.ZERO) {
+  char value;
+  int address = 0;
+  if (motor_index == Motor.ONE) {
+    address += 511;
+  }
+  String reading_id = "";
+  while (true) { // loop
+    value = EEPROM.read(address);
+    
+    if (value != 0 && byte(value) != 255) { // value is not null
+      reading_id += value;
+    } else {
+      break;
+    }
+    
+    address++;
+  }
+  
+  return reading_id;
+}
+
+/* ----------------Getter Functions---------------- */
 
 String getID(String motor_stringdex = Motor.ZERO) {
   return id[motor_stringdex.toInt()];
@@ -221,7 +200,7 @@ String getVersion() {
   return version_number;
 }
 
-// ----------------Setter Functions----------------
+/* ----------------Setter Functions---------------- */
 
 String setID(String new_id, String motor_stringdex = Motor.ZERO) {
   int start_index = 0;
@@ -287,6 +266,8 @@ String setRate(String data, String motor_stringdex = Motor.ZERO) {
   return data;
 }
 
+
+// Handles receiving messages from the arduino
 void receivedMessage(String symbol, String motor, String command, String data) {
   // initializing strings for constructing a response
   String respond_symbol = Symbol.ERROR;
@@ -350,18 +331,30 @@ void receivedMessage(String symbol, String motor, String command, String data) {
   }
 }
 
-void serialEvent() {
-  if (Serial.available()) {
-    String symbol = Serial.readStringUntil(' ');
-    String motor = Serial.readStringUntil(' ');
-    String command = Serial.readStringUntil(' ');
-    String data = Serial.readStringUntil('\n');
-    receivedMessage(symbol, motor, command, data);
-  }
+/* ------------Default Arduino Functions------------ */
+void setup() {  
+  Serial.begin(9600);
+
+  // setup encoder pins
+  pinMode(encoderPinA[1], INPUT);
+  pinMode(encoderPinB[1], INPUT);
+
+  pinMode(encoderPinA[2], INPUT);
+  pinMode(encoderPinB[2], INPUT);
+
+  // read the ids from eeprom
+  id[0] = readID(Motor.ZERO);
+  id[1] = readID(Motor.ONE);
+
+  // Set up motor hardware
+  AFMS.begin();
+  motor[0]->setSpeed(default_speed);
+  motor[1]->setSpeed(default_speed);
 }
 
 void loop() {
-  for (int i = 0 ; i < sizeof(motor)/sizeof(motor[0]) ; i++) { // That weird part of this line is the C way to find the length of that array.
+  // loop through motor arrays
+  for (int i = 0; i < (sizeof(motor) / sizeof(motor[0])); i++) {
     updateMotorPos(String(i));
     updateEncoderPos(String(i));
     
@@ -372,4 +365,14 @@ void loop() {
   }
 }
 
+// fires every time we get a serial event. Parses incoming message and passes it on to receivedMessage()
+void serialEvent() {
+  if (Serial.available()) {
+    String symbol = Serial.readStringUntil(' ');
+    String motor = Serial.readStringUntil(' ');
+    String command = Serial.readStringUntil(' ');
+    String data = Serial.readStringUntil('\n');
+    receivedMessage(symbol, motor, command, data);
+  }
+}
 
