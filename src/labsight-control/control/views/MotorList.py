@@ -86,9 +86,24 @@ class MotorList(Gtk.Box):
 
         self.refresh_button = Gtk.Button().new_with_label("Reload")
         self.refresh_button.props.hexpand = False
-        self.refresh_button.props.halign = Gtk.Align.CENTER
 
-        self.loading_stack.add_named(self.refresh_button, "refresh")
+        self.delete_button = Gtk.Button().new_with_label("Delete")
+        self.delete_button.props.hexpand = False
+        self.delete_button.props.no_show_all = True
+        self.delete_button.show()
+
+        self.cancel_button = Gtk.Button().new_with_label("Cancel")
+        self.cancel_button.props.hexpand = False
+        self.cancel_button.props.no_show_all = True
+        self.cancel_button.hide()
+
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        box.props.halign = Gtk.Align.CENTER
+        box.add(self.refresh_button)
+        box.add(self.delete_button)
+        box.add(self.cancel_button)
+
+        self.loading_stack.add_named(box, "refresh")
 
         self.progress_bar = Gtk.ProgressBar()
         self.progress_bar.props.hexpand = True
@@ -102,10 +117,24 @@ class MotorList(Gtk.Box):
 
         self.loading_stack.add_named(self.progress_bar, "progress")
 
+        def delete(origin=None, props=None):
+            for mid in self.motors:
+                self.motors[mid].show_delete()
+                self.delete_button.hide()
+                self.cancel_button.show()
+        self.delete_button.connect("clicked", delete)
+
+        def cancel(origin=None, props=None):
+            for mid in self.motors:
+                self.motors[mid].hide_delete()
+                self.delete_button.show()
+                self.cancel_button.hide()
+        self.cancel_button.connect("clicked", cancel)
+
         # connect refresh button signal
         def clicked(origin=None, props=None):
+            cancel()
             self.start_load()
-
         self.refresh_button.connect("clicked", clicked)
 
     def load_from_files(self):
@@ -120,6 +149,12 @@ class MotorList(Gtk.Box):
                     def f(motor):
                         self.emit("control-motor", motor)
                     motor_list_child.control_callback = f
+
+                    def d(origin=None, props=None):
+                        motor_list_child.destroy()
+                        del self.motors[mid]
+                        self.queue_draw()
+                    motor_list_child.delete_callback = d
 
                     self.motors[mid] = motor_list_child
                     self.list_box.insert(motor_list_child, -1)
@@ -167,6 +202,8 @@ class MotorList(Gtk.Box):
 
         self.serial_queue = None
         self.emit("done-loading")
+
+        self.queue_draw()
 
 class SerialWorker(Thread):
     # construct self
@@ -217,6 +254,7 @@ class MotorListChild(Gtk.ListBoxRow):
             self.motor.setProperty("calibrated-units", -1)
 
         self.control_callback = None
+        self.delete_callback = None
 
         # build ui
         self.update_ui()
@@ -259,6 +297,15 @@ class MotorListChild(Gtk.ListBoxRow):
         self.connect_button = Gtk.Button().new_with_label("Connect")
         self.connect_button.connect("clicked", self.connect)
 
+        self.delete_button = Gtk.Button().new_with_label("Delete")
+        self.delete_button.get_style_context().add_class("destructive-action")
+        self.delete_button.connect("clicked", self.delete)
+        self.delete_button.props.no_show_all = True
+        self.delete_button.hide()
+
+        self.configure_button = Gtk.Button().new_with_label("Configure")
+        self.configure_button.connect("clicked", self.configure)
+
         self.status_label = Gtk.Label("")
         self.status_label.props.use_markup = True
         self.status_label.props.halign = Gtk.Align.START
@@ -282,9 +329,6 @@ class MotorListChild(Gtk.ListBoxRow):
             id_label.props.use_markup = True
             id_label.props.halign = Gtk.Align.START
 
-            configure_button = Gtk.Button().new_with_label("Configure")
-            configure_button.connect("clicked", self.configure)
-
             # attach things to the grid
             info_grid.attach(display_label, 0, 0, 1, 1)
             info_grid.attach(axis_label, 0, 1, 1, 1)
@@ -294,7 +338,8 @@ class MotorListChild(Gtk.ListBoxRow):
 
             button_grid.attach(self.control_button, 0, 0, 1, 1)
             button_grid.attach(self.connect_button, 0, 1, 1, 1)
-            button_grid.attach(configure_button, 0, 2, 1, 1)
+            button_grid.attach(self.configure_button, 0, 2, 1, 1)
+            button_grid.attach(self.delete_button, 0, 3, 1, 1)
 
             # if there is no serial, add disconnected class
             if self.motor.serial == None:
@@ -314,15 +359,11 @@ class MotorListChild(Gtk.ListBoxRow):
             motor_id.props.halign = Gtk.Align.START
             motor_id.props.wrap = True
 
-            # configure button
-            configure_button = Gtk.Button().new_with_label("Configure")
-            configure_button.connect("clicked", self.configure)
-
             # attach things to the grid
             info_grid.attach(motor_detected_label, 0, 0, 1, 1)
             info_grid.attach(motor_id, 0, 1, 1, 1)
 
-            button_grid.attach(configure_button, 0, 0, 1, 1)
+            button_grid.attach(self.configure_button, 0, 0, 1, 1)
 
         # add grids to box
         box.add(info_grid)
@@ -345,11 +386,20 @@ class MotorListChild(Gtk.ListBoxRow):
 
         self.update_status()
 
+    def show_delete(self):
+        self.control_button.hide()
+        self.connect_button.hide()
+        self.delete_button.show()
+        self.configure_button.hide()
+
+    def hide_delete(self):
+        self.update_ui()
+
     def control(self, event, param=None):
         self.control_callback(self.motor)
 
     def connect(self, event, param=None):
-        print("configure all the things")
+        print("connect all the things")
 
     def configure(self, event, param=None):
         if self.motor.getProperty("configured") == True:
@@ -378,6 +428,11 @@ class MotorListChild(Gtk.ListBoxRow):
 
         # start the dialog
         dialog.run()
+
+    def delete(self, origin=None, param=None):
+        self.motor.remove()
+        if self.delete_callback != None:
+            self.delete_callback()
 
     def update_status(self):
         if self.status == 0:
