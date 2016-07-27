@@ -2,7 +2,6 @@
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
-#include <stdarg.h>
 
 // version number
 String version_number = "0.6";
