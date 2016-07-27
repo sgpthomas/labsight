@@ -15,6 +15,7 @@ class Symbol:
 
 """ Commands """
 class Command:
+    NIL = "_"
     ID = "id"
     STEP = "step"
     KILL = "kill"
@@ -22,6 +23,13 @@ class Command:
     VERSION = "version"
     STYLE = "style"
     HALT = "halt"
+
+""" Motor Indexing """
+
+class Motor:
+    NIL = "_"
+    ZERO = "0"
+    ONE = "1"
 
 """ Data """
 class Data:
@@ -33,16 +41,17 @@ class Data:
 
 """ Message Structure """
 class Message:
-    def __init__(self, symbol, command, data):
+    def __init__(self, symbol, motor, command, data):
         self.symbol = symbol
+        self.motor = motor
         self.command = command
         self.data = data
 
     def __repr__(self):
-        return "Message({}, {}, {})".format(self.symbol, self.command, self.data)
+        return "Message({}, {}, {}, {})".format(self.symbol, self.motor, self.command, self.data)
 
     def __str__(self):
-        return " ".join([self.symbol,self.command,self.data])
+        return " ".join([self.symbol, self.motor, self.command, self.data])
 
 def sendMessage(msg, ser, move_func=None, callback=None):
 
@@ -76,7 +85,7 @@ class MessengerPigeon(Thread):
         self.callback = callback
 
     def run(self):
-        msg_string = "{} {} {}".format(self.message.symbol, self.message.command, self.message.data)
+        msg_string = "{} {} {} {}".format(self.message.symbol, self.message.motor, self.message.command, self.message.data)
 
         self.serial.write(bytes(msg_string, "ascii"))
 

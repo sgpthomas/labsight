@@ -1,21 +1,22 @@
 import os
 import io
 import yaml
-from labsight.protocol import Symbol, Command, Data, Message, sendMessage
+from labsight.protocol import Symbol, Motor, Command, Data, Message, sendMessage
 
 class Motor(object):
 
-    def __init__(self, config_folder, serial, id):
+    def __init__(self, config_folder, serial, id, motor_port=Motor.ZERO): # The only reason the default is here for now is back-compatibility. It should be eliminated soon.
         # Searches the config_folder directory for a YAML file called the motor's id.
         # Stores all other necessary global variables as well
         # If there is no config file, a new one is created
         self.config_folder = config_folder
         self.serial = serial
         self.id = id
+        self.motor_port = motor_port
         self.properties = {}
         self.filename = str(self.id) + ".yml"
         self.path = os.path.join(config_folder, self.filename)
-        self.defaults = {"id":self.id,"step":0,"style":Data.SINGLE}
+        self.defaults = {"id":self.id,"motor_port":self.motor_port,"step":0,"style":Data.SINGLE}
         file_list = os.listdir(config_folder)
         if self.filename in file_list:
             self.loadProperties()
@@ -24,7 +25,7 @@ class Motor(object):
 
     def __repr__(self):
         if self.serial != None:
-            return "Motor(id={}, port={})".format(self.id, self.serial.port)
+            return "Motor(id={}, port={}, motor_port={})".format(self.id, self.serial.port,self.motor_port)
         else:
             return "Motor(id={}, port={})".format(self.id, None)
 
@@ -71,13 +72,13 @@ class Motor(object):
 
     def getID(self):
         # Get's the id from the Arduino, and updates this class' values as is appropriate
-        msg = Message(Symbol.GET, Command.ID, Data.NIL)
+        msg = Message(Symbol.GET, self.motor_port, Command.ID, Data.NIL)
         self.id = self.sendMessage(msg).data
         self.properties["id"] = self.id
         return self.sendMessage(msg)
 
     def setID(self, new_id):
-        msg = Message(Symbol.SET, Command.ID, str(new_id))
+        msg = Message(Symbol.SET, self.motor_port, Command.ID, str(new_id))
         self.id = new_id
         self.properties["id"] = new_id
         return self.sendMessage(msg)
@@ -87,7 +88,7 @@ class Motor(object):
     def setStep(self, steps, function = None):
         # define function to update relative step count in dictionary
 
-        move_msg = Message(Symbol.SET, Command.STEP, str(steps))
+        move_msg = Message(Symbol.SET, self.motor_port, Command.STEP, str(steps))
         confirm = self.sendMessage(move_msg, function)
 
         # update step count after moving
@@ -105,7 +106,7 @@ class Motor(object):
 
     def setKill(self):
         # This kills the motor, calling its release() function
-        msg = controller.Message(Symbol.SET, Command.KILL, Data.NIL)
+        msg = controller.Message(Symbol.SET, self.motor_port, Command.KILL, Data.NIL)
         ret = self.sendMessage(msg)
         # self.getKill
         return ret
@@ -121,7 +122,7 @@ class Motor(object):
         new_style
         if style not in [Data.SINGLE, Data.DOUBLE, Data.INTERLEAVE, Data.MICROSTEP]:
              raise Excpetion("Must be a valid style: single, double, interleave, or microstep")
-        msg = Message(Symbol.SET, Command.ID, str(new_style))
+        msg = Message(Symbol.SET, self.motor_port, Command.ID, str(new_style))
         self.properties["style"] = style
         return self.sendMessage(msg)
 
@@ -129,7 +130,7 @@ class Motor(object):
         return self.properties["style"]
 
     def setHalt(self):
-            msg = Message(Symbol.SET, Command.HALT, Data.NIL)
+            msg = Message(Symbol.SET, self.motor_port, Command.HALT, Data.NIL)
             ret = self.sendMessage(msg)
             return ret
 

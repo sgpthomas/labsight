@@ -4,9 +4,9 @@ from serial.serialutil import SerialException
 import os
 from time import sleep
 from labsight.motor import Motor
-from labsight.protocol import Symbol, Command, Data, Message, sendMessage
+from labsight.protocol import Symbol, Motor, Command, Data, Message, sendMessage
 
-lib_version = "0.5"
+lib_version = "0.6"
 
 # This is outside of a function so that it is accessible to every function here, as it needs to be
 motor_objects = {}
@@ -33,16 +33,16 @@ def getAttachedSerials(config_folder):
 
             # if we can establish communications with the port, get the id and then append motor object to motors
             if (establishComms(ser)):
+                for i in range(2):
+                    # get id from arduino
+                    response = sendMessage(Message(Symbol.GET, str(i), Command.ID, Data.NIL), ser)
+                    mid = response.data
 
-                # get id from arduino
-                response = sendMessage(Message(Symbol.GET, Command.ID, Data.NIL), ser)
-                mid = response.data
+                    # create motor object and append it to the array
+                    motor_objects[mid] = (Motor(config_folder, str(i), ser, mid))
 
-                # create motor object and append it to the array
-                motor_objects[mid] = (Motor(config_folder, ser, mid))
-
-                # create new motor object so that a new config folder is generated if needs
-                motor_serials[mid] = ser
+                    # create new motor object so that a new config folder is generated if needs
+                    motor_serials[mid] = ser
 
         except SerialException:
             print("Unable to open '{}'. This port is probably already open.")
@@ -71,16 +71,15 @@ def createDefaultConfigDirectory():
 def establishComms(ser):
     # send initial message
     try:
-        response = sendMessage (Message(Symbol.GET, Command.VERSION, Data.NIL), ser)
+        response = sendMessage (Message(Symbol.GET, Motor.NIL, Command.VERSION, Data.NIL), ser)
     except:
-        print("no reponse")
+        print("no response")
         return False
 
     # check to make sure that returned lib_version matches ours
     if (response.data != lib_version):
-        print("Arduino returned version: {} instead of version: {}".format(response.data, lib_version))
+        print("Arduino is version {} instead of version {}".format(response.data, lib_version))
         return False
 
     # communications have been established
     return True
-    
