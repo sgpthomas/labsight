@@ -76,6 +76,10 @@ def establishComms(ser):
         print("no response")
         return False
 
+    if response == None:
+        print("no response")
+        return False
+
     # check to make sure that returned lib_version matches ours
     if (response.data != lib_version):
         print("Arduino is version {} instead of version {}".format(response.data, lib_version))

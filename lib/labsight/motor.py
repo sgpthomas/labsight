@@ -5,17 +5,16 @@ from labsight.protocol import Symbol, Motor, Command, Data, Message, sendMessage
 
 class Motor(object):
 
-    def __init__(self, config_folder, serial, id, motor_port=Motor.ZERO): # The only reason the default is here for now is back-compatibility. It should be eliminated soon.
+    def __init__(self, config_folder, serial, id): # The only reason the default is here for now is back-compatibility. It should be eliminated soon.
         # Searches the config_folder directory for a YAML file called the motor's id.
         # Stores all other necessary global variables as well
         # If there is no config file, a new one is created
         self.config_folder = config_folder
         self.serial = serial
         self.id = id
-        self.motor_port = motor_port
         self.properties = {}
-        self.filename = str(self.id) + ".yml"
-        self.path = os.path.join(config_folder, self.filename)
+        filename = str(self.id) + ".yml"
+        self.path = os.path.join(config_folder, filename)
         self.defaults = {"id":self.id,"motor_port":self.motor_port,"step":0,"style":Data.SINGLE}
         file_list = os.listdir(config_folder)
         if filename in file_list:
