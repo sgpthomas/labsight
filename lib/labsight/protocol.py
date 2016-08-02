@@ -92,13 +92,12 @@ class MessengerPigeon(Thread):
         # read response and strip extrenous space and split it
         response = self.serial.readline().strip().decode("ascii").split(" ")
 
-        # make sure that there are 3 parts
+        # make sure that there are 4 parts
         if len(response) != 4:
-            print(response)
-            print(Exception("Received message '{}' which is not of length 4".format(response)))
+            raise Exception("Received message '{}' which is not of length 4".format(response))
 
         # format response array into a Message object
-        response = Message(response[0], response[1], response[2])
+        response = Message(response[0], response[1], response[2], response[3])
 
         # make sure that response has the same command as initial message
         if response.command != self.message.command:
@@ -115,7 +114,7 @@ class MessengerPigeon(Thread):
                 last_response = self.serial.readline().strip().decode("ascii").split(" ")
 
                 # check if received full message or just data
-                if len(last_response) == 3:
+                if len(last_response) == 4:
                     # format response array into a Message object
                     last_response = Message(last_response[0], last_response[1], last_response[2])
 

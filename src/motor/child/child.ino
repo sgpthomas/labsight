@@ -22,7 +22,7 @@
 String version_number = "0.7";
 
 // identity
-String id[2] = {"", ""};
+String id = "";
 
 int encoderStepsPerMotorStep = 2;
 int followingErrorTolerance = 10;
@@ -40,7 +40,7 @@ int encoderPos[2] = {0, 0};
 int prevEncoderSum[2] = {0, 0};
 
 // Hardware objects
-Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 // Adafruit_StepperMotor *motor0 = ;
 // Adafruit_StepperMotor *motor1 = ;
 Adafruit_StepperMotor *motor[2] = {AFMS.getStepper(200, 1), AFMS.getStepper(200, 2)};
@@ -103,7 +103,7 @@ String join(String symbol, String motor, String command, String data) {
 int len = (sizeof(motor) / sizeof(motor[0]));
 
 int binaryToDecimal(int a, int b) {
-  return (a*2 + b*1);
+  return (a * 2 + b * 1);
 }
 
 /* ----------------Update Functions---------------- */
@@ -112,8 +112,8 @@ void updateMotorPos(String motor_stringdex) {
   uint8_t dir;
   int motor_index = motor_stringdex.toInt();
 
+  // set direction
   if (steps_to_move[motor_index] != 0) {
-    // set direction 
     dir = FORWARD;
     if (steps_to_move[motor_index] < 0) {
       dir = BACKWARD;
@@ -128,7 +128,7 @@ void updateMotorPos(String motor_stringdex) {
       steps_to_move[motor_index] ++;
       motorPos[motor_index] --;
     }
-//    Serial.println(join(Symbol.STREAM, motor_stringdex, Command.STEP, String(steps_to_move[motor_index])));
+    Serial.println(join(Symbol.STREAM, motor_stringdex, Command.STEP, String(steps_to_move[motor_index])));
   }
 }
 
@@ -137,18 +137,18 @@ bool transitionError[2] = {false,false};
 
 void updateEncoderPos(String motor_stringdex) {
   // This ISR takes 20 microseconds to execute
-//  digitalWrite(9, HIGH);
-//  digitalWrite(9, LOW);
-//  digitalWrite(9, HIGH);
-//  digitalWrite(9, LOW);
+  //  digitalWrite(9, HIGH);
+  //  digitalWrite(9, LOW);
+  //  digitalWrite(9, HIGH);
+  //  digitalWrite(9, LOW);
   for (int motor_index = 0; motor_index < len ; motor_index++) {
-//    int motor_index = motor_stringdex.toInt();
-  //  if (steps_to_move[motor_index] != 0) {
+    //    int motor_index = motor_stringdex.toInt();
+    // if (steps_to_move[motor_index] != 0) {
     int deltaEncoderPos = 0;
     int encoderSum = binaryToDecimal(digitalRead(encoderPinA[motor_index]), digitalRead(encoderPinB[motor_index]));
     if (encoderSum != prevEncoderSum[motor_index]) {
       moved[motor_index] = true;
-      switch(encoderSum) {
+      switch (encoderSum) {
         case 1:
           if (prevEncoderSum[motor_index] == 3) {
             deltaEncoderPos ++;
@@ -156,7 +156,7 @@ void updateEncoderPos(String motor_stringdex) {
             deltaEncoderPos --;
           }
           break;
-          
+
         case 0:
           if (prevEncoderSum[motor_index] == 1) {
             deltaEncoderPos ++;
@@ -164,7 +164,7 @@ void updateEncoderPos(String motor_stringdex) {
             deltaEncoderPos --;
           }
           break;
-    
+
         case 2:
           if (prevEncoderSum[motor_index] == 0) {
             deltaEncoderPos ++;
@@ -172,9 +172,9 @@ void updateEncoderPos(String motor_stringdex) {
             deltaEncoderPos --;
           }
           break;
-    
+
         case 3:
-          if (prevEncoderSum[motor_index]== 2) {
+          if (prevEncoderSum[motor_index] == 2) {
             deltaEncoderPos ++;
           } else if (prevEncoderSum[motor_index] == 1) {
             deltaEncoderPos --;
@@ -186,41 +186,41 @@ void updateEncoderPos(String motor_stringdex) {
       }
       encoderPos[motor_index] += deltaEncoderPos;
       prevEncoderSum[motor_index] = encoderSum;
-  //  } else if (encoderPos[motor_index] != 0) {
-  //    encoderPos[motor_index] = 0;
-  //  }
-    }
+
+      if (steps_to_move[motor_index] != 0) {
+         steps_to_move[motor_index] -= deltaEncoderPos;
+      }
+    } //else if (encoderPos[motor_index] != 0) {
+    //  encoderPos[motor_index] = 0;
+    //}
   }// digitalWrite(9, LOW);
 }
 
 /* -----------------Misc Functions----------------- */
 
-String readID(String motor_index) {
+String readID() {
   char value;
   int address = 0;
-  if (motor_index == Motor.ONE) {
-    address += 511;
-  }
   String reading_id = "";
   while (true) { // loop
     value = EEPROM.read(address);
-    
+
     if (value != 0 && byte(value) != 255) { // value is not null
       reading_id += value;
     } else {
       break;
     }
-    
+
     address++;
   }
-  
+
   return reading_id;
 }
 
 /* ----------------Getter Functions---------------- */
 
 String getID(String motor_stringdex) {
-  return id[motor_stringdex.toInt()];
+  return id + "_" + motor_stringdex;
 }
 
 String getVersion() {
@@ -233,19 +233,14 @@ String getStep(String motor_stringdex) {
 
 /* ----------------Setter Functions---------------- */
 
-String setID(String new_id, String motor_stringdex) {
+String setID(String new_id) {
   int start_index = 0;
-  if (motor_stringdex == Motor.ONE) {
-    start_index += 511;
-    id[1] = new_id;
-  } else if (motor_stringdex == Motor.ZERO) {
-    id[0] = new_id;
-  }
+  
   for (int i = 0; i < new_id.length(); i++) {
     EEPROM.write(i + start_index, new_id[i]);
   }
   EEPROM.write(start_index + new_id.length(), 0);
-  return readID(motor_stringdex);
+  return readID();
 }
 
 // The below function supports only relative motion
@@ -257,7 +252,7 @@ String setStep(String distance, String motor_stringdex = Motor.ZERO) {
 
   // set steps to move and add one so that it actually moves the right number of steps
   steps_to_move[motor_stringdex.toInt()] = distance.toInt() + (distance.toInt() / abs(distance.toInt()));
-  
+
   return distance;
 }
 
@@ -291,7 +286,7 @@ String setHalt(String motor_stringdex = Motor.ZERO) {
   return Data.NIL;
 }
 
-// setSpeed doesn't work right now
+// setSpeed may not work right now
 String setRate(String data, String motor_stringdex = Motor.ZERO) {
   motor[motor_stringdex.toInt()]->setSpeed(data.toInt());
   return data;
@@ -308,9 +303,9 @@ void receivedMessage(String symbol, String motor, String command, String data) {
 
   // if symbol is get
   if (symbol == Symbol.GET) {
-    // contruct answer 
+    // contruct answer
     respond_symbol = Symbol.ANSWER;
-    
+
     if (command == Command.ID) {
       respond_data = getID(motor);
     }
@@ -323,14 +318,14 @@ void receivedMessage(String symbol, String motor, String command, String data) {
       respond_symbol = Symbol.ERROR;
     }
   }
- 
+
   // if symbol is set
   else if (symbol == Symbol.SET) {
     // construct response
     respond_symbol = Symbol.ANSWER;
-    
+
     if (command == Command.ID) {
-      respond_data = setID(data, motor);
+      respond_data = setID(data);
     }
     else if (command == Command.STEP) {
       respond_data = setStep(data, motor);
@@ -340,7 +335,7 @@ void receivedMessage(String symbol, String motor, String command, String data) {
     }
     else if (command == Command.KILL) {
       respond_data = setKill(motor);
-    } 
+    }
     else if (command == Command.STYLE) {
       respond_data = setStyle(data, motor);
     }
@@ -351,7 +346,7 @@ void receivedMessage(String symbol, String motor, String command, String data) {
       respond_symbol = Symbol.ERROR;
     }
   }
-  
+
   if (erred == true) {
     respond_symbol = Symbol.ERROR;
   }
@@ -366,7 +361,7 @@ void receivedMessage(String symbol, String motor, String command, String data) {
 }
 
 /* ------------Default Arduino Functions------------ */
-void setup() {  
+void setup() {
   Serial.begin(9600);
 
   // setup encoder pins
@@ -376,6 +371,7 @@ void setup() {
   pinMode(encoderPinA[2], INPUT);
   pinMode(encoderPinB[2], INPUT);
 
+<<<<<<< HEAD
 //Debugging stuff for the oscilloscope
 //  pinMode(8, OUTPUT);
 //  pinMode(9, OUTPUT);
@@ -388,14 +384,13 @@ void setup() {
  
   //Interrupts
   attachInterrupt(digitalPinToInterrupt(2), updateEncoderPos, RISING);
-  attachInterrupt(digitalPinToInterrupt(3), updateEncoderPos, RISING);
+//  attachInterrupt(digitalPinToInterrupt(3), updateEncoderPos, RISING);
   // Attach the interrupt pin to a 5 kHz signal
   tone(8, encoderSamplingFrequency);
 // This frequency should be adequate for 10 revolutions per second on the motor (oversampling x2)
 
   // read the ids from eeprom
-  id[0] = readID(Motor.ZERO);
-  id[1] = readID(Motor.ONE);
+  id = readID();
 
   // Set up motor hardware
   AFMS.begin();
@@ -403,14 +398,14 @@ void setup() {
   motor[1]->setSpeed(default_speed);
 }
 
-static bool foo = false;
+//static bool foo = false;
 
 void loop() {
   // loop through motor arrays
   for (int i = 0; i < len; i++) {
     updateMotorPos(String(i));
     if (moved[i]) {
-      Serial.println(join(Symbol.STREAM, String(i), Command.STEP, String(encoderPos[i]/encoderStepsPerMotorStep)));
+      Serial.println(join(Symbol.STREAM, String(i), Command.STEP, String(encoderPos[i] / encoder_steps_per_motor_step)));
       moved[i] = false;
     }
     if (transitionError[i]) {
@@ -429,8 +424,6 @@ void loop() {
   //Check kill switch pins:
   for (int pin = 9 ; pin <= 10 ; pin++) {
     if (digitalRead(pin) == HIGH) {
-//      Serial.println("val: " + String(digitalRead(pin)));
-//      Serial.println("pin: " + String(pin));
       setHalt("0");
       Serial.println(join(Symbol.ERROR, "0", Command.HALT, String(encoderPos[0]/encoderStepsPerMotorStep)));
     }
