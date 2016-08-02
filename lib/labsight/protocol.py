@@ -93,8 +93,9 @@ class MessengerPigeon(Thread):
         response = self.serial.readline().strip().decode("ascii").split(" ")
 
         # make sure that there are 3 parts
-        if len(response) != 3:
-            raise Exception("Received message '{}' which is not of length 3".format(response))
+        if len(response) != 4:
+            print(response)
+            print(Exception("Received message '{}' which is not of length 4".format(response)))
 
         # format response array into a Message object
         response = Message(response[0], response[1], response[2])

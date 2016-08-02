@@ -3,21 +3,37 @@
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
-// Kill switch
-// Following error
-// Transition error
+// Emit own 5 kHz signal [DONE]
+// Kill switch [DONE]
+// Following error [DONE]
+// Transition error [DONE]
+// Standardize to camelCase and/or snake_case please!!
+// A few more setter and getter functions
+//  This will be version 0.7
+//  Remember to add all this to motor.py
+//    - encoderStepsPerMotorStep
+//    - followingErrorTolerance 
+//    - encoderSamplingFrequency 
+//    - Possibly deimplement speed [X]
+//    - getStep [DONE]
+
 
 // version number
-String version_number = "0.6";
+String version_number = "0.7";
 
 // identity
 String id[2] = {"", ""};
 
-int encoder_steps_per_motor_step = 2;
+int encoderStepsPerMotorStep = 2;
+int followingErrorTolerance = 10;
+int encoderSamplingFrequency = 5000;
 
 // encoder pins for motor 1
 int encoderPinA[2] = {6, 4};
 int encoderPinB[2] = {7, 5};
+
+// the motors' believed internal position
+int motorPos[2] = {0, 0};
 
 // encoder position and previous encoder pin sum
 int encoderPos[2] = {0, 0};
@@ -74,6 +90,12 @@ struct dat {
 };
 dat Data;
 
+struct err {
+  String TRANSITION = "transition";
+  String FOLLOWING = "following";
+};
+err Error;
+
 String join(String symbol, String motor, String command, String data) {
   return symbol + " " + motor + " " + command + " " + data;
 }
@@ -97,18 +119,21 @@ void updateMotorPos(String motor_stringdex) {
       dir = BACKWARD;
     }
     // move motor one step in the right direction
-    motor[motor_index]->onestep(dir, style[motor_index]);
+    motor[motor_index]->step(1, dir, style[motor_index]);
     // update steps_to_move
     if (dir == FORWARD) {
       steps_to_move[motor_index] --;
+      motorPos[motor_index] --;
     } else if (dir == BACKWARD) {
       steps_to_move[motor_index] ++;
+      motorPos[motor_index] --;
     }
 //    Serial.println(join(Symbol.STREAM, motor_stringdex, Command.STEP, String(steps_to_move[motor_index])));
   }
 }
 
 bool moved[2] = {false,false};
+bool transitionError[2] = {false,false};
 
 void updateEncoderPos(String motor_stringdex) {
   // This ISR takes 20 microseconds to execute
@@ -156,9 +181,9 @@ void updateEncoderPos(String motor_stringdex) {
           }
           break;
       }
-//      if (deltaEncoderPos == 0) {
-//        Serial.println(join(Symbol.ERROR, String(motor_index), Command.STEP, String(encoderPos[motor_index]/encoder_steps_per_motor_step)));
-//      }
+      if (deltaEncoderPos == 0) {
+        transitionError[motor_index] = true;
+      }
       encoderPos[motor_index] += deltaEncoderPos;
       prevEncoderSum[motor_index] = encoderSum;
   //  } else if (encoderPos[motor_index] != 0) {
@@ -200,6 +225,10 @@ String getID(String motor_stringdex) {
 
 String getVersion() {
   return version_number;
+}
+
+String getStep(String motor_stringdex) {
+  return String(encoderPos[motor_stringdex.toInt()]);
 }
 
 /* ----------------Setter Functions---------------- */
@@ -287,6 +316,9 @@ void receivedMessage(String symbol, String motor, String command, String data) {
     }
     else if (command == Command.VERSION) {
       respond_data = getVersion();
+    } 
+    else if (command == Command.STEP) {
+      respond_data = getStep(motor);
     } else {
       respond_symbol = Symbol.ERROR;
     }
@@ -345,12 +377,20 @@ void setup() {
   pinMode(encoderPinB[2], INPUT);
 
 //Debugging stuff for the oscilloscope
-  pinMode(8, OUTPUT);
-  pinMode(9, OUTPUT);
+//  pinMode(8, OUTPUT);
+//  pinMode(9, OUTPUT);
 
+// Kill switches
+  pinMode(9, INPUT);  // Motor 0 - kill witch
+  pinMode(10, INPUT); // Motor 0 + kill switch
+  pinMode(11, INPUT); // Motor 1 - Kill switch
+  pinMode(12, INPUT); // Motor 1 + kill switch
+ 
+  //Interrupts
   attachInterrupt(digitalPinToInterrupt(2), updateEncoderPos, RISING);
   attachInterrupt(digitalPinToInterrupt(3), updateEncoderPos, RISING);
-  // Attach the interrupt pin to a 5 kHz TTL signal
+  // Attach the interrupt pin to a 5 kHz signal
+  tone(8, encoderSamplingFrequency);
 // This frequency should be adequate for 10 revolutions per second on the motor (oversampling x2)
 
   // read the ids from eeprom
@@ -370,21 +410,47 @@ void loop() {
   for (int i = 0; i < len; i++) {
     updateMotorPos(String(i));
     if (moved[i]) {
-      Serial.println(join(Symbol.STREAM, String(i), Command.STEP, String(encoderPos[i]/encoder_steps_per_motor_step)));
+      Serial.println(join(Symbol.STREAM, String(i), Command.STEP, String(encoderPos[i]/encoderStepsPerMotorStep)));
       moved[i] = false;
+    }
+    if (transitionError[i]) {
+      Serial.println(join(Symbol.ERROR, String(i), Error.TRANSITION, String(encoderPos[i]/encoderStepsPerMotorStep)));
+      transitionError[i] = false;
+    }
+    if (abs(motorPos[i]-encoderPos[i]) > followingErrorTolerance) {
+      Serial.println(join(Symbol.ERROR, String(i), Error.FOLLOWING, String(encoderPos[i]/encoderStepsPerMotorStep)));
+      motorPos[i] = encoderPos[i];
     }
     if (steps_to_move[i] == 0 && queue_response[i] != "") {
       Serial.println(queue_response[i]);
       queue_response[i] = "";
     }
   }
-  
-  if (foo) {
-    digitalWrite(8, HIGH);
-  } else if (!foo) {
-    digitalWrite(8, LOW);
+  //Check kill switch pins:
+  for (int pin = 9 ; pin <= 10 ; pin++) {
+    if (digitalRead(pin) == HIGH) {
+//      Serial.println("val: " + String(digitalRead(pin)));
+//      Serial.println("pin: " + String(pin));
+      setHalt("0");
+      Serial.println(join(Symbol.ERROR, "0", Command.HALT, String(encoderPos[0]/encoderStepsPerMotorStep)));
+    }
+  } for (int pin = 11 ; pin <= 12 ; pin++) {
+    if (digitalRead(pin) == HIGH) {
+//      Serial.println("val: " + String(digitalRead(pin)));
+//      Serial.println("pin: " + String(pin));
+      setHalt("1");
+      Serial.println(join(Symbol.ERROR, "1", Command.HALT, String(encoderPos[1]/encoderStepsPerMotorStep)));
+
+    }
   }
-  foo = !foo;
+  
+//  
+//  if (foo) {
+//    digitalWrite(8, HIGH);
+//  } else if (!foo) {
+//    digitalWrite(8, LOW);
+//  }
+//  foo = !foo;
 }
 
 //void serialLoop () {

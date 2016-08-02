@@ -6,7 +6,7 @@ from time import sleep
 from labsight.motor import Motor
 from labsight.protocol import Symbol, Motor, Command, Data, Message, sendMessage
 
-lib_version = "0.6"
+lib_version = "0.7"
 
 # This is outside of a function so that it is accessible to every function here, as it needs to be
 motor_objects = {}
@@ -72,6 +72,7 @@ def establishComms(ser):
     # send initial message
     try:
         response = sendMessage (Message(Symbol.GET, Motor.NIL, Command.VERSION, Data.NIL), ser)
+        print(response)
     except:
         print("no response")
         return False
