@@ -1,14 +1,12 @@
 # LabSight
 
-This will detail every subroutine that we write.
+A collection of code for controlling motors, intended for probe drives. Includes an Arduino sketch, a Python control library and a GUI for using all of it.
 
 ## Files
 
 The current goal for these files is that they allow you to control motors, in a manner similar to NI MAX. Functionality for dataruns will be added later.
 
-(Note from Sam: This Controller Library is being built from the ground up to allow for multiple motors. It is much harder to add this at a later stage)
-
-Any planned functions can be added to these files as is seen fit.
+Any planned functions will be added to these files as is seen fit.
 
 ### File List:
 
@@ -69,19 +67,50 @@ Any planned functions can be added to these files as is seen fit.
   - *Controller initiates all contact and child always responds with something*
   - *Send underscore `_` when there is no data to send*
 
-* **Symbols Used by Controller**
-  - Questions, like a get function (**?**)
-  - Commands, like a set function (**!**)
-* **Symbols Used by Arduino**
-  - Responses from Arduino (**$**)
-  - Stream (**>**)
-  - Errors (**@**)
+* **Symbols**
+  * Used by Controller:
+    - Questions, like a get function (**?**)
+    - Commands, like a set function (**!**)
+  * Used by Arduino:
+    - Responses from Arduino (**$**)
+    - Stream (**>**)
+    - Errors (**@**)
+* **Motor Index**
+  - Specifies which of the up to two motors per Arduino you would like to apply the given command to
+  - It is zero-indexed
 * **Commands**
-  - step
-  - id
-  - kill
-  - halt?
-  - speed
+  - init - A function that starts the streaming of encoder data. It was implemented so that when the Python library checks for the version and id, it is not immediately overwhelemed by frivolous encoder readings
+  - version - Returns the protocol version upploaded to the arduino, for compatibility reasons
+  - id - Allows the getting and setting a string to identify the arduino by
+  - step - Enables one to get the current position in steps, as well as to set the current step, AKA moving the motor
+  - style - Used for the changing of stepping style between "single", "double", "interleave", and "microstep"
+  - kill - Kill the motor, allowing the axle to be turned freely
+  - halt - Stops the motor's movement immediately, but does not release it
+
+## Arduino Pins:
+  This pin scheme is meant for the Arduino Uno, though it may work on other boards. 
+  The only pins used are digital, so everybody listed below is assumed to be digital.
+  - Pin 0 and 1:
+    - Not used because let's not mess with serial communication pins
+  - Pins 2 and 3:
+    - Pin 2 is attached as an interrupt to update the encoder position 
+      - The Arduino's loop function was not fast enough to read the encoder positions at the appropriate rate, so we have an ISR for updating the encoder position attached to this pin
+    - A 5 kHz square wave from pin 8 triggers this interrupt
+    - Pin 3 is not used currently, because interrupt pins are precious on the Uno
+  - Pins 4 and 5: 
+    - Read the waveforms for the two channels of encoder 0 (which is attached to motor 0)
+  - Pins 6 and 7:
+    - Do the same thing as pins 4 and 5 for encoder 1
+  - Pin 8: 
+    - Emits a 5 kHz square wave to trigger the ISR at pin 2
+  - Pins 9, 10, 11, and 12:
+    - Kill switches (2 per motor for each end of the motor's axis) are attached here
+    - See the note below for more details
+  - Pin 13:
+    - Not used because we'd rather not mess with the LED if we don't have to
+
+**A note about kill switches:**
+  The pins for the kill switches use a pullup resistor that sets them at HIGH. Therefore, if a kill switch is not connected, the Arduino will fail-safe, and believe it is being killed. Not only is this terrifying and misleading message of imminent demise endangering the Arduino's mental health, it also prevents the motor from being moved. **Make sure to have all 4 kill switches attached, or else none of the motors will be able to move!**
   
 ## Original Objectives for the GUI:
   - A GUI class that communicates with controller.py, and provides NI-MAX functionality
