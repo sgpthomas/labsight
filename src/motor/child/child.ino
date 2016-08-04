@@ -3,10 +3,6 @@
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
-// Emit own 5 kHz signal [DONE]
-// Kill switch [DONE]
-// Following error [DONE]
-// Transition error [DONE]
 // Standardize to camelCase and/or snake_case please!!
 // A few more setter and getter functions
 //  This will be version 0.7
@@ -24,13 +20,15 @@ String version_number = "0.7";
 // identity
 String id = "";
 
-int encoderStepsPerMotorStep = 2;
-int followingErrorTolerance = 10;
+bool initialized = false;
+
+float encoderStepsPerMotorStep = 2.0;
+int followingErrorTolerance = 10.0;
 int encoderSamplingFrequency = 5000;
 
 // encoder pins for motor 1
-int encoderPinA[2] = {6, 4};
-int encoderPinB[2] = {7, 5};
+int encoderPinA[2] = {4, 6};
+int encoderPinB[2] = {5, 7};
 
 // the motors' believed internal position
 int motorPos[2] = {0, 0};
@@ -82,6 +80,7 @@ struct com {
   String VERSION = "version";
   String STYLE = "style";
   String HALT = "halt";
+  String INIT = "init";
 };
 com Command;
 
@@ -111,7 +110,6 @@ int binaryToDecimal(int a, int b) {
 void updateMotorPos(String motor_stringdex) {
   uint8_t dir;
   int motor_index = motor_stringdex.toInt();
-
   // set direction
   if (steps_to_move[motor_index] != 0) {
     dir = FORWARD;
@@ -123,18 +121,18 @@ void updateMotorPos(String motor_stringdex) {
     // update steps_to_move
     if (dir == FORWARD) {
       steps_to_move[motor_index] --;
-      motorPos[motor_index] --;
+      motorPos[motor_index] ++;
     } else if (dir == BACKWARD) {
       steps_to_move[motor_index] ++;
       motorPos[motor_index] --;
     }
-    Serial.println(join(Symbol.STREAM, motor_stringdex, Command.STEP, String(steps_to_move[motor_index])));
   }
 }
 
 bool moved[2] = {false,false};
 bool transitionError[2] = {false,false};
 
+// This is the interrupt service routine
 void updateEncoderPos(String motor_stringdex) {
   // This ISR takes 20 microseconds to execute
   //  digitalWrite(9, HIGH);
@@ -186,10 +184,6 @@ void updateEncoderPos(String motor_stringdex) {
       }
       encoderPos[motor_index] += deltaEncoderPos;
       prevEncoderSum[motor_index] = encoderSum;
-
-      if (steps_to_move[motor_index] != 0) {
-         steps_to_move[motor_index] -= deltaEncoderPos;
-      }
     } //else if (encoderPos[motor_index] != 0) {
     //  encoderPos[motor_index] = 0;
     //}
@@ -228,7 +222,7 @@ String getVersion() {
 }
 
 String getStep(String motor_stringdex) {
-  return String(encoderPos[motor_stringdex.toInt()]);
+  return String(int(encoderPos[motor_stringdex.toInt()]/encoderStepsPerMotorStep));
 }
 
 /* ----------------Setter Functions---------------- */
@@ -324,7 +318,14 @@ void receivedMessage(String symbol, String motor, String command, String data) {
     // construct response
     respond_symbol = Symbol.ANSWER;
 
-    if (command == Command.ID) {
+    if (command == Command.INIT) {
+//      Serial.println(join(Symbol.ANSWER, Motor.NIL, Command.VERSION, id));
+//      Serial.println(join(Symbol.ANSWER, Motor.NIL, Command.ID, version_number));
+      initialized = true;
+      respond_data = Data.NIL;
+    }
+
+    else if (command == Command.ID) {
       respond_data = setID(data);
     }
     else if (command == Command.STEP) {
@@ -371,16 +372,15 @@ void setup() {
   pinMode(encoderPinA[2], INPUT);
   pinMode(encoderPinB[2], INPUT);
 
-<<<<<<< HEAD
 //Debugging stuff for the oscilloscope
 //  pinMode(8, OUTPUT);
 //  pinMode(9, OUTPUT);
 
 // Kill switches
-  pinMode(9, INPUT);  // Motor 0 - kill witch
-  pinMode(10, INPUT); // Motor 0 + kill switch
-  pinMode(11, INPUT); // Motor 1 - Kill switch
-  pinMode(12, INPUT); // Motor 1 + kill switch
+  pinMode(9, INPUT_PULLUP);  // Motor 0 - kill witch
+  pinMode(10, INPUT_PULLUP); // Motor 0 + kill switch
+  pinMode(11, INPUT_PULLUP); // Motor 1 - Kill switch
+  pinMode(12, INPUT_PULLUP); // Motor 1 + kill switch
  
   //Interrupts
   attachInterrupt(digitalPinToInterrupt(2), updateEncoderPos, RISING);
@@ -404,46 +404,37 @@ void loop() {
   // loop through motor arrays
   for (int i = 0; i < len; i++) {
     updateMotorPos(String(i));
-    if (moved[i]) {
-      Serial.println(join(Symbol.STREAM, String(i), Command.STEP, String(encoderPos[i] / encoder_steps_per_motor_step)));
-      moved[i] = false;
-    }
-    if (transitionError[i]) {
-      Serial.println(join(Symbol.ERROR, String(i), Error.TRANSITION, String(encoderPos[i]/encoderStepsPerMotorStep)));
-      transitionError[i] = false;
-    }
-    if (abs(motorPos[i]-encoderPos[i]) > followingErrorTolerance) {
-      Serial.println(join(Symbol.ERROR, String(i), Error.FOLLOWING, String(encoderPos[i]/encoderStepsPerMotorStep)));
-      motorPos[i] = encoderPos[i];
-    }
-    if (steps_to_move[i] == 0 && queue_response[i] != "") {
-      Serial.println(queue_response[i]);
-      queue_response[i] = "";
+    if (initialized) {
+      if (moved[i]) {
+        Serial.println(join(Symbol.STREAM, String(i), Command.STEP, String(int(encoderPos[i] / encoderStepsPerMotorStep))));
+        moved[i] = false;
+      }
+      if (transitionError[i]) {
+        Serial.println(join(Symbol.ERROR, String(i), Error.TRANSITION, String(int(encoderPos[i] / encoderStepsPerMotorStep))));
+        transitionError[i] = false;
+      }
+      if (steps_to_move[i] != 0) {
+        if (abs(motorPos[i]-(encoderPos[i] / encoderStepsPerMotorStep)) > followingErrorTolerance) {
+          Serial.println(join(Symbol.ERROR, String(i), Error.FOLLOWING, String(int(encoderPos[i]) / encoderStepsPerMotorStep)) + " " + String(motorPos[i]));
+          motorPos[i] = encoderPos[i];
+        }
+      }
+      if (steps_to_move[i] == 0 && queue_response[i] != "") {
+        Serial.println(queue_response[i]);
+        queue_response[i] = "";
+      }
     }
   }
   //Check kill switch pins:
-  for (int pin = 9 ; pin <= 10 ; pin++) {
-    if (digitalRead(pin) == HIGH) {
-      setHalt("0");
-      Serial.println(join(Symbol.ERROR, "0", Command.HALT, String(encoderPos[0]/encoderStepsPerMotorStep)));
-    }
-  } for (int pin = 11 ; pin <= 12 ; pin++) {
-    if (digitalRead(pin) == HIGH) {
-//      Serial.println("val: " + String(digitalRead(pin)));
-//      Serial.println("pin: " + String(pin));
-      setHalt("1");
-      Serial.println(join(Symbol.ERROR, "1", Command.HALT, String(encoderPos[1]/encoderStepsPerMotorStep)));
-
-    }
-  }
-  
-//  
-//  if (foo) {
-//    digitalWrite(8, HIGH);
-//  } else if (!foo) {
-//    digitalWrite(8, LOW);
+  // The Arduino will not work without a grounded kill switch attached!!
+//  if (digitalRead(9) == HIGH || digitalRead(10) == HIGH) {
+//    setHalt("0");
+//    Serial.println(join(Symbol.ERROR, "0", Command.HALT, String(int(encoderPos[0]/encoderStepsPerMotorStep))));
 //  }
-//  foo = !foo;
+//  if (digitalRead(11) == HIGH || digitalRead(12) == HIGH) {
+//    setHalt("1");
+//    Serial.println(join(Symbol.ERROR, "1", Command.HALT, String(encoderPos[1]/encoderStepsPerMotorStep)));
+//  }
 }
 
 //void serialLoop () {

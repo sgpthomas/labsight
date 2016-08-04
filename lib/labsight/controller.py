@@ -37,9 +37,9 @@ def getAttachedSerials(config_folder):
                     # get id from arduino
                     response = sendMessage(Message(Symbol.GET, str(i), Command.ID, Data.NIL), ser)
                     mid = response.data
-
+                    a = sendMessage(Message(Symbol.SET, Motor.NIL, Command.INIT, Data.NIL),ser)
                     # create motor object and append it to the array
-                    motor_objects[mid] = (Motor(config_folder, str(i), ser, mid))
+                    motor_objects[mid] = Motor()# config_folder, str(i), ser, mid
 
                     # create new motor object so that a new config folder is generated if needs
                     motor_serials[mid] = ser
@@ -85,6 +85,5 @@ def establishComms(ser):
     if (response.data != lib_version):
         print("Arduino is version {} instead of version {}".format(response.data, lib_version))
         return False
-
     # communications have been established
     return True
