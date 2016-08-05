@@ -53,7 +53,8 @@ String queue_response[2] = {"", ""};
 
 // for sending errors
 bool erred = false;
-
+// to stop the kill error from spamming
+bool killed = false;
 /* Hacky Enums */
 struct sym {
   String GET = "?";
@@ -425,15 +426,23 @@ void loop() {
       }
     }
   }
-  //Check kill switch pins:
-  // The Arduino will not work without a grounded kill switch attached!!
+//  Check kill switch pins:
+//   The Arduino will not work without a grounded kill switch attached!!
 //  if (digitalRead(9) == HIGH || digitalRead(10) == HIGH) {
 //    setHalt("0");
-//    Serial.println(join(Symbol.ERROR, "0", Command.HALT, String(int(encoderPos[0]/encoderStepsPerMotorStep))));
+//    if (!killed) {
+//      Serial.println(join(Symbol.ERROR, "0", Command.HALT, String(int(encoderPos[0]/encoderStepsPerMotorStep))));
+//      killed = true;
+//    }
 //  }
-//  if (digitalRead(11) == HIGH || digitalRead(12) == HIGH) {
+//  else if (digitalRead(11) == HIGH || digitalRead(12) == HIGH) {
 //    setHalt("1");
-//    Serial.println(join(Symbol.ERROR, "1", Command.HALT, String(encoderPos[1]/encoderStepsPerMotorStep)));
+//    if (!killed) {
+//      Serial.println(join(Symbol.ERROR, "1", Command.HALT, String(encoderPos[1]/encoderStepsPerMotorStep)));
+//      killed = true;
+//    }
+//  } else if (killed) {
+//    killed = false;
 //  }
 }
 
