@@ -47,9 +47,6 @@ Any planned functions will be added to these files as is seen fit.
 * ModeButton.py
   - A widget for changing between steps and the appropriate unit, while in the motor control view
 
-* encoder.ino
-  - Testing encoder code before moving it to child.ino
-
 * datarun.py
     - A placeholder file for our later datarun functionality
 
