@@ -3,4 +3,6 @@
 *.pyc
 lib/build/
 lib/dist/
-lib/labsight.egg-info/
+lib_experimental/build
+lib_experimental/dist
+*.egg-info
