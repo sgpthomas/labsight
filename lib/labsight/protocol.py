@@ -16,7 +16,6 @@ class Symbol:
 """ Commands """
 class Command:
     INIT = "init"
-    NIL = "_"
     ID = "id"
     STEP = "step"
     KILL = "kill"
@@ -54,20 +53,21 @@ class Message:
     def __str__(self):
         return " ".join([self.symbol, self.motor, self.command, self.data])
 
-def sendMessage(msg, ser, move_func=None, callback=None):
+    def __len__(self):
+        return 4
 
-    if callback == True:
-        MessengerPigeon(msg, ser, move_func).start()
-        return
+def sendMessage(msg, port_path, move_func=None, callback=None):
+
+    ser = serial.Serial(port_path)
 
     if callback != None:
         MessengerPigeon(msg, ser, move_func, callback).start()
         return
 
-    # else callback == None
     def default_callback(response):
         global msg_response
         msg_response = response
+
 
     pigeon = MessengerPigeon(msg, ser, move_func, default_callback)
     pigeon.start()
@@ -77,7 +77,7 @@ def sendMessage(msg, ser, move_func=None, callback=None):
     return msg_response
 
 class MessengerPigeon(Thread):
-    def __init__(self, message, serial, move_func=None, callback=None):
+    def __init__(self, message, ser, move_func=None, callback=None):
         Thread.__init__(self)
 
         self.message = message
@@ -94,7 +94,7 @@ class MessengerPigeon(Thread):
         response = self.serial.readline().strip().decode("ascii").split(" ")
 
         if response == "":
-            print(Exception("Received no response on this port"))
+            raise Exception("Received no response on this port")
 
         # make sure that there are 4 parts
         if len(response) != 4:
@@ -103,8 +103,11 @@ class MessengerPigeon(Thread):
         # format response array into a Message object
         response = Message(response[0], response[1], response[2], response[3])
 
+        if response.motor != self.message.motor:
+            raise Exception("The sent motor index of {} does not match up with the received motor index of {}").format(self.message.motor, response.motor)
+
         # make sure that response has the same command as initial message
-        if response.command != self.message.command and self.message.command != Command.INIT:
+        if response.command != self.message.command:
             raise Exception("Arduino responded with incorrect command. {} instead of {}".format(response.command, self.message.command))
 
         if response.symbol == Symbol.ERROR:

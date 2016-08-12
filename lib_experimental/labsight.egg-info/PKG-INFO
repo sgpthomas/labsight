@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: labsight
+Version: 0.8
+Summary: A python library that facilitates communicating with Arduinos to control.
+Home-page: UNKNOWN
+Author: ['Samuel Thomas', 'Samuel Buckley-Bonanno']
+Author-email: ['sgpthomas@gmail.com', 'sbuckleybonanno@gmail.com']
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
