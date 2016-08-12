@@ -1,9 +1,0 @@
-setup.py
-labsight/__init__.py
-labsight/controller.py
-labsight/motor.py
-labsight/protocol.py
-labsight.egg-info/PKG-INFO
-labsight.egg-info/SOURCES.txt
-labsight.egg-info/dependency_links.txt
-labsight.egg-info/top_level.txt
