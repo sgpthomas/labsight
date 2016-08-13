@@ -1,7 +1,7 @@
 import serial
 import serial.tools.list_ports as list
 from serial.serialutil import SerialException
-from threading import Thread
+import threading
 
 # How to rework this:
 #     have a class that loops, repeatedly readlining, and it organizes each command into categories, and updates the motor's positions however is necessary
@@ -18,7 +18,7 @@ from threading import Thread
 # The only thing left to do now is change how serials are handled. There can not be so many objects open at once
 # They must all (all 2 of them max on my computer) come from controller.py or protocol.py (probably the former)
 # , and be handed to whatever needs them. Also, serialHandler should probably go in protocol.py,
-# and be renamed to serialReceiver. Protocol.py at this ppint is largely just becoming a reference file
+# and be renamed to serialReceiver. Protocol.py at this point is largely just becoming a reference file
 # for the protocol, as well as containig serialReceiver. protocol.py is the post office of the library,
 # let's put it that way. controller.py is the central government, and motor.py describes the functions and duties
 # of the average citizen. I should add that to the README.md
@@ -69,20 +69,18 @@ class Message:
         self.data = data
 
     def __repr__(self):
-        return "Message({}, {}, {}, {})".format(self.symbol, self.motor, self.command, self.data)
+        return "Message({}, {}, {}, {})".format(self.symbol, self.motor_index, self.command, self.data)
 
     def __str__(self):
-        return " ".join([self.symbol, self.motor, self.command, self.data])
+        return " ".join([self.symbol, self.motor_index, self.command, self.data])
 
     def __len__(self):
         return 4
 
-def sendMessage(msg, port_path, move_func=None, callback=None):
-
-    ser = serial.Serial(port_path)
+def sendMessage(msg, ser, callback=None):
 
     if callback != None:
-        MessengerPigeon(msg, ser, move_func, callback).start()
+        MessengerPigeon(msg, ser, callback).start()
         return
 
     def default_callback(response):
@@ -90,20 +88,19 @@ def sendMessage(msg, port_path, move_func=None, callback=None):
         msg_response = response
 
 
-    pigeon = MessengerPigeon(msg, ser, move_func, default_callback)
+    pigeon = MessengerPigeon(msg, ser, default_callback)
     pigeon.start()
     pigeon.join()
 
     global msg_response
     return msg_response
 
-class MessengerPigeon(Thread):
-    def __init__(self, message, ser, move_func=None, callback=None):
-        Thread.__init__(self)
+class MessengerPigeon(threading.Thread):
+    def __init__(self, message, ser, callback=None):
+        threading.Thread.__init__(self)
 
         self.message = message
         self.ser = ser
-        self.move_func = move_func
         self.callback = callback
 
     def run(self):
@@ -112,14 +109,65 @@ class MessengerPigeon(Thread):
         self.ser.write(bytes(msg_string, "ascii"))
 
         # read response and strip extrenous space and split it
-        response = self.ser.readline().strip().decode("ascii").split(" ")
+        # response = self.ser.readline().strip().decode("ascii").split(" ")
 
-        if response == "":
-            raise Exception("Received no response on this port")
+        # if response == [""]:
+        #     raise Exception("Received no response on this port")
 
         # make sure that there are 4 parts
-        if len(response) != 4:
-            raise Exception("Received message '{}' which is not of length 4".format(response))
+        # if len(response) != 4:
+        #     raise Exception("Received message '{}' from port {}, which is not of length 4".format(response, self.ser.name))
 
         # format response array into a Message object
-        response = Message(response[0], response[1], response[2], response[3])
+        # response = Message(response[0], response[1], response[2], response[3])
+
+class SerialHandler(threading.Thread):
+    def __init__(self, ser, motor_list, verbose=False):
+        threading.Thread.__init__(self)
+        self.exit_flag = threading.Event()
+
+        # Note: verbose has no function yet, and is a placeholder for future developments
+        self.verbose = verbose
+
+        self.ser = ser
+        self.motor_list = motor_list
+        print("SerialHandler's Motor list:")
+        print(self.motor_list)
+        for motor in self.motor_list:
+            motor.responseIs("placeholder")
+
+    def run(self):
+        print("Thread running")
+        while True:
+            response = self.ser.readline().strip().decode("ascii").split(" ")
+            if response != [""]:
+                if len(response) != 4:
+                    raise Exception("Received erroneous message '{}'; Not of length 4").format(response)
+                else:
+                    print(response)
+                    response = Message(response[0], response[1], response[2], response[3])
+                    print("response now")
+                    print(response)
+                    self.filter_response(response)
+            if self.exit_flag.is_set():
+                return
+
+    def get_exit_flag(self):
+        return self.exit_flag
+
+    def filter_response(self, message):
+        print("Filtering:")
+        print(message)
+        if message.symbol == Symbol.STREAM and message.command == Command.STEP:
+            self.motor_list[int(message.motor_index)].updateStep(message.data)
+        # elif message.symbol == Symbol.ERROR:
+        #     print("Arduino on port {} threw an error of type '{}' with data value '{}'").format(port_name, message.Command, message.Data)
+        else:
+            try:
+                motor_intdex = int(message.motor_index)
+                print(motor_intdex)
+            except ValueError:
+                self.motor_list[0].responseIs(message)
+                self.motor_list[1].responseIs(message)
+                return
+            self.motor_list[motor_intdex].responseIs(message)

@@ -7,7 +7,7 @@ from time import sleep
 import threading
 
 from labsight.motor import Motor
-from labsight.protocol import Symbol, MotorIndex, Command, Data, Message, sendMessage
+from labsight.protocol import Symbol, MotorIndex, Command, Data, Message, sendMessage, SerialHandler
 
 lib_version = "0.8"
 
@@ -29,67 +29,39 @@ def start():
             # sleep for some time to give the arduino time to reset
             # sleep(2)
 
-            # if we can establish communications with the port, get the id and then append motor object to motors
-        if somethingConnected(port.device):
-            # From this serial initialization, every other use of the serial comes forth
-            motor_serials[port.device] = serial.Serial(port.device, timeout=2)
+        # From this serial initialization, every other use of the serial comes forth
+        ser = serial.Serial(port.device, timeout=2)
+        motor_serials[port.device] = ser
+
+        if somethingConnected(ser):
+            motor_serials[port.device] = ser
 
             motor_objects[port.device] = []
             for motor_index in range(2):
-                motor_objects[port.device].append(Motor(port.device, motor_index)) #
+                motor_object = Motor(port.device, motor_index, ser)
+                motor_objects[port.device].append(motor_object)
 
-            threads[port.device] = serialHandler(port.device, motor_objects[port.device])
-            arduino_version = motor_objects[port.device][motor_index].getVersion()
-            if arduino_version != lib_version:
-                del motor_objects[port.device]
-            motor_objects[port.device][motor_index].getID()
+            threads[port.device] = SerialHandler(ser, motor_objects[port.device])
+            threads[port.device].start()
+            for motor_object in motor_objects[port.device]:
+                arduino_version = motor_object.getVersion()
+                if arduino_version != lib_version:
+                    del motor_object
+                    continue
+                else:
+                    motor_object.getID()
+                    print("id gotten?")
 
+        else:
+            del motor_serials[port.device]
     # return motor dictionary
     return motor_objects
 
-class serialHandler(threading.Thread):
-    def __init__(self, port_name, motor_list, verbose=False):
-        threading.Thread.__init__(self)
 
-
-        self.exit_flag = threading.Event()
-        self.port_name = port_name
-        try:
-            self.ser = serial.Serial(port_name, timeout=2)
-        except SerialException:
-            print("Unable to open '{}'. This port is probably already open.").format(port_name)
-            self.exit()
-
-        self.verbose = verbose
-        self.motor_list = motor_list
-
-    def run(self):
-        while True:
-            response = self.serial.readline().strip().decode("ascii").split(" ")
-            if len(response) != 4:
-                print("Received erroneous message '{}'; Not of length 4")
-            else:
-                response = Message(response[0], response[1], response[2], response[3])
-                self.filter_response(response)
-            if exit.is_set():
-                self.ser.close()
-                return
-
-    def getExitFlag(self):
-        return self.exit_flag
-
-    def filter_response(self, message):
-        if message.Symbol == Symbol.STREAM and message.Command == Command.STEP:
-            self.motor_list[int(message.MotorIndex)].updateStep(message.Data)
-        elif message.Symbol == Symbol.ERROR:
-            print("Arduino on port {} threw an error of type '{}' with data value '{}'").format(port_name, message.Command, message.Data)
-        else:
-            self.motor_list[message.MotorIndex].lastResponseIs(response)
-
-
-
-def somethingConnected(port_device):
-    if sendMessage (Message(Symbol.GET, MotorIndex.NIL, Command.VERSION, Data.NIL), port_device) != "":
+def somethingConnected(ser):
+    sendMessage (Message(Symbol.GET, MotorIndex.NIL, Command.VERSION, Data.NIL), ser)
+    response = ser.readline().strip().decode("ascii")
+    if response != "":
         return True
     else:
         return False
@@ -99,7 +71,7 @@ def somethingConnected(port_device):
 
 def exit():
     for thread in threads.items():
-        thread.getExitFlag.set()
+        thread.get_exit_flag.set()
     threads = {}
     motor_serials = {}
 
@@ -112,28 +84,3 @@ def serials():
     if len(motor_serials) == 0:
         start()
     return motor_serials
-
-
-
-
-
-
-# def establishComms(ser):
-#     # send initial message
-#     try:
-#         response = sendMessage (Message(Symbol.GET, Motor.NIL, Command.VERSION, Data.NIL), ser)
-#         print(response)
-#     except:
-#         print("no response")
-#         return False
-#
-#     if response == None:
-#         print("no response")
-#         return False
-#
-#     # check to make sure that returned lib_version matches ours
-#     if (response.data != lib_version):
-#         print("Arduino is version {} instead of version {}".format(response.data, lib_version))
-#         return False
-#     # communications have been established
-#     return True
