@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name = "labsight",
-    version = "0.7",
+    version = "0.8",
     author = ["Samuel Thomas","Samuel Buckley-Bonanno"],
     author_email = ["sgpthomas@gmail.com","sbuckleybonanno@gmail.com"],
     description = ("A python library that facilitates communicating with Arduinos to control."),

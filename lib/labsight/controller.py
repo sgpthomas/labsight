@@ -1,89 +1,109 @@
 import serial
 import serial.tools.list_ports as list
 from serial.serialutil import SerialException
+
 import os
-from time import sleep
+import threading
+import sys
+import signal
+import atexit
+
 from labsight.motor import Motor
-from labsight.protocol import Symbol, Motor, Command, Data, Message, sendMessage
+from labsight.protocol import Symbol, MotorIndex, Command, Data, Message, sendMessage, SerialHandler
 
-lib_version = "0.7"
+# This is the main
 
-# This is outside of a function so that it is accessible to every function here, as it needs to be
+lib_version = "0.8"
+
+# These are outside of a function so that they are accessible to every function here, as they needs to be
 motor_objects = {}
+motor_serials = {}
 
+# initialize the container for the serialHandlers
+threads = {}
+stopper = threading.Event()
 """ Talks to available ports and creates motor object if it finds anything """
-def getAttachedSerials(config_folder):
-    # initialize return array
-    motor_serials = {}
-
-    # createDefaultConfigDirectory()
-    # print config directory
-    # print("Using config directory: {}".format(config_folder))
-
+def start():
     # search through available ports
-    for port in list.comports():
-        # print("Found " + port.device)
+    for i in range(len(list.comports())):
+        port = list.comports()[i]
 
-        # try to connect to serial
-        try:
-            ser = serial.Serial(port.device, timeout=2)
+        # From this serial initialization, every other use of the serial comes forth
+        ser = serial.Serial(port.device, timeout=2)
+        motor_serials[port.device] = ser
 
-            # sleep for some time to give the arduino time to reset
-            sleep(2)
+        if somethingConnected(ser):
+            motor_serials[port.device] = ser
 
-            # if we can establish communications with the port, get the id and then append motor object to motors
-            if (establishComms(ser)):
-                for i in range(2):
-                    # get id from arduino
-                    response = sendMessage(Message(Symbol.GET, str(i), Command.ID, Data.NIL), ser)
-                    mid = response.data
-                    a = sendMessage(Message(Symbol.SET, Motor.NIL, Command.INIT, Data.NIL),ser)
-                    # create motor object and append it to the array
-                    motor_objects[mid] = Motor()# config_folder, str(i), ser, mid
+            motor_objects[port.device] = []
+            for motor_index in range(2):
+                motor_object = Motor(port.device, motor_index, ser)
+                motor_objects[port.device].append(motor_object)
+            threads[port.device] = SerialHandler(ser, motor_objects[port.device], stopper)
 
-                    # create new motor object so that a new config folder is generated if needs
-                    motor_serials[mid] = ser
+        else:
+            del motor_serials[port.device]
 
-        except SerialException:
-            print("Unable to open '{}'. This port is probably already open.")
+
+    handler = SignalHandler(stopper, threads)
+    signal.signal(signal.SIGINT, handler)
+
+    for port_device, thread in threads.items():
+        thread.start()
+
+        for motor_object in motor_objects[port_device]:
+            arduino_version = motor_object.getVersion()
+            if arduino_version != lib_version:
+                del motor_object
+                continue
+            else:
+                motor_object.getID()
+                print("id gotten?")
 
     # return motor dictionary
-    return motor_serials
-
-def motors(config = "", reset=False):
-    if config == "":
-        config = createDefaultConfigDirectory()
-    if len(motor_objects) > 0 and not reset:
-        return motor_objects
-    getAttachedSerials(config)
     return motor_objects
 
-def createDefaultConfigDirectory():
-    path = os.path.expanduser(os.path.join("~", ".labsight", "motors"))
 
-    # if configuration folder is not given, then use default
-    if (not os.path.isdir(path)):
-        # print("Config Directory doesn't exist. Generating a new one.")
-        os.makedirs(path)
-
-    return path
-
-def establishComms(ser):
-    # send initial message
-    try:
-        response = sendMessage (Message(Symbol.GET, Motor.NIL, Command.VERSION, Data.NIL), ser)
-        print(response)
-    except:
-        print("no response")
+def somethingConnected(ser):
+    sendMessage (Message(Symbol.GET, MotorIndex.NIL, Command.VERSION, Data.NIL), ser)
+    response = ser.readline().strip().decode("ascii")
+    if response != "":
+        return True
+    else:
         return False
 
-    if response == None:
-        print("no response")
-        return False
+def test():
+    print("testing")
 
-    # check to make sure that returned lib_version matches ours
-    if (response.data != lib_version):
-        print("Arduino is version {} instead of version {}".format(response.data, lib_version))
-        return False
-    # communications have been established
-    return True
+def end():
+    print("ending this!")
+    stopper.set()
+    return None
+
+atexit.register(end)
+
+class SignalHandler:
+    stopper = None
+    workers = None
+
+    def __init__(self, stopper, workers):
+        self.stopper = stopper
+        self.workers = workers
+
+    def __call__(self, signum, frame):
+        self.stopper.set()
+
+        for port, worker in self.workers.items():
+            worker.join()
+
+        sys.exit(0)
+
+def motors(reset=False):
+    if len(motor_objects) == 0 or reset:
+        start()
+    return motor_objects
+
+def serials():
+    if len(motor_serials) == 0:
+        start()
+    return motor_serials

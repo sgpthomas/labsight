@@ -313,7 +313,7 @@ void receivedMessage(String symbol, String motor, String command, String data) {
     // construct response
     respond_symbol = Symbol.ANSWER;
 
-    else if (command == Command.ID) {
+    if (command == Command.ID) {
       respond_data = setID(data);
     }
     else if (command == Command.STEP) {
@@ -386,13 +386,13 @@ void setup() {
   motor[1]->setSpeed(default_speed);
 }
 
-int encoderPosConvertedToMotorSteps;
+int encoderPosInUnitsOfMotorStep;
 
 void loop() {
   // loop through motor arrays
   for (int i = 0; i < len; i++) {
     updateMotorPos(String(i));
-    encoderPosInUnitsOfMotorStep = int(encoderPos[i] / encoderStepsPerMotorStep)
+    encoderPosInUnitsOfMotorStep = int(encoderPos[i] / encoderStepsPerMotorStep);
 
     if (moved[i]) {
       Serial.println(join(Symbol.STREAM, String(i), Command.STEP, String(encoderPosInUnitsOfMotorStep)));
@@ -404,7 +404,7 @@ void loop() {
     }
     if (steps_to_move[i] != 0) {
       if (abs(motorPos[i]-encoderPosInUnitsOfMotorStep) > followingErrorTolerance) {
-        Serial.println(join(Symbol.ERROR, String(i), Error.FOLLOWING, String(encoderPosInUnitsOfMotorStep)) + " " + String(motorPos[i]));
+        Serial.println(join(Symbol.ERROR, String(i), Error.FOLLOWING, String(encoderPosInUnitsOfMotorStep)));
         motorPos[i] = encoderPos[i];
       }
     }
