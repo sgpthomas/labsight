@@ -28,10 +28,7 @@ class Motor(object):
 
 # Functions used by the SerialHandler thread:
     def responseIs(self, last_response):
-        print("Response is:")
         self.response = last_response
-        print(self.response)
-        print(type(self.response))
 
     def updateStep(self, step):
         self.step = step
@@ -44,7 +41,6 @@ class Motor(object):
 
         # if configuration folder is not given, then use default
         if (not os.path.isdir(path)):
-            # print("Config Directory doesn't exist. Generating a new one.")
             os.makedirs(path)
 
         return path
@@ -88,27 +84,14 @@ class Motor(object):
         # There should probably be a sleep function here...
         # This is to give the serialHandler time to receive the message
         # time.sleep(10)
-        print("The world according to sendMessage:")
-        print("index: " + str(self.motor_index))
-        print(msg)
-        print(self.response)
         if self.response.command == "wait":
             while True:
                 if self.response.command != "wait":
                     break
-        if msg.command != self.response.command:
-            raise Exception("Sent command from message '{}' does not match received command from response '{}'".format(msg.command, self.response.command))
+        # time.sleep(1)
+        # if msg.command != self.response.command:
+        #     raise Exception("Sent command from message '{}' does not match received command from response '{}'".format(msg, self.response))
         return self.response
-
-    # def receiveResponse(self,msg):
-    #     time.sleep(10)
-    #     print("The world according to sendMessage:")
-    #     print("index: " + str(self.motor_index))
-    #     print(msg)
-    #     print(self.response)
-    #     if msg.command != self.response.command:
-    #         raise Exception("Sent command from message '{}' does not match received command from response '{}'".format(msg.command, self.response.command))
-    #     return self.response
 
     """The functions that allow you to run certain commands on the motor object:"""
 
@@ -118,7 +101,6 @@ class Motor(object):
         msg = Message(Symbol.GET, MotorIndex.NIL, Command.VERSION, Data.NIL)
         self.version = self.sendMessage(msg)
         self.properties["version"] = self.version
-        print("Version Gotten!")
         return self.properties["version"]
 
     def getID(self):

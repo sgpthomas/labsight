@@ -8,6 +8,8 @@ import sys
 import signal
 import atexit
 
+import time
+
 from labsight.motor import Motor
 from labsight.protocol import Symbol, MotorIndex, Command, Data, Message, sendMessage, SerialHandler
 
@@ -27,14 +29,14 @@ def start():
     # search through available ports
     for i in range(len(list.comports())):
         port = list.comports()[i]
-
+        print("Found port at {}".format(port.device))
         # From this serial initialization, every other use of the serial comes forth
         ser = serial.Serial(port.device, timeout=2)
         motor_serials[port.device] = ser
 
         if somethingConnected(ser):
             motor_serials[port.device] = ser
-
+            print("Arduino connected at {}".format(port.device))
             motor_objects[port.device] = []
             for motor_index in range(2):
                 motor_object = Motor(port.device, motor_index, ser)
@@ -58,25 +60,22 @@ def start():
                 continue
             else:
                 motor_object.getID()
-                print("id gotten?")
 
     # return motor dictionary
     return motor_objects
 
 
 def somethingConnected(ser):
-    sendMessage (Message(Symbol.GET, MotorIndex.NIL, Command.VERSION, Data.NIL), ser)
+    # sendMessage(Message(Symbol.GET, MotorIndex.NIL, Command.VERSION, Data.NIL), ser)
+    ser.write(bytes("? _ version _", "ascii"))
     response = ser.readline().strip().decode("ascii")
     if response != "":
         return True
     else:
         return False
 
-def test():
-    print("testing")
-
 def end():
-    print("ending this!")
+    print("Terminating threads...")
     stopper.set()
     return None
 
@@ -103,7 +102,7 @@ def motors(reset=False):
         start()
     return motor_objects
 
-def serials():
-    if len(motor_serials) == 0:
+def serials(reset=False):
+    if len(motor_serials) == 0 or reset:
         start()
     return motor_serials
