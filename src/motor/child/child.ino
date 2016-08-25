@@ -240,7 +240,7 @@ String setStep(String distance, String motor_stringdex) {
     return distance;
   }
 
-  // set steps to move and adds one so that it actually moves the right number of steps
+  // sets steps to move and adds one so that it actually moves the right number of steps
   steps_to_move[motor_stringdex.toInt()] = distance.toInt() + (distance.toInt() / abs(distance.toInt()));
 
   return distance;

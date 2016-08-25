@@ -61,6 +61,7 @@ class Message:
         return 4
 
 def sendMessage(msg, ser, callback=None):
+    print("Protocol sending message...")
     pigeon = MessengerPigeon(msg, ser)
     pigeon.start()
     msg_string = "{} {} {} {}".format(msg.symbol, msg.motor_index, msg.command, msg.data)
@@ -80,6 +81,7 @@ class MessengerPigeon(threading.Thread):
     def run(self):
         msg_string = "{} {} {} {}".format(self.message.symbol, self.message.motor_index, self.message.command, self.message.data)
         self.ser.write(bytes(msg_string, "ascii"))
+        print("Pigeon has sent message...")
         return
 
 class SerialHandler(threading.Thread):
@@ -97,17 +99,25 @@ class SerialHandler(threading.Thread):
 
         for motor in self.motor_list:
             motor.responseIs(self.wait_message)
+        print("Thread initialized")
 
     def run(self):
+        print("thread running")
         while not self.stopper.is_set():
-            response = self.ser.readline().strip().decode("ascii").split(" ")
-            if response != [""]:
-                if len(response) != 4:
-                    print("Received erroneous message '{}'; Not of length 4".format(response))
+            resp = [""]
+            # print(self.ser.readline().decode("ascii").strip())
+            resp = self.ser.readline().decode("ascii").strip().split(" ")
+            # print(response)
+            if resp != [""]:
+                print(resp)
+                if len(resp) == 7: # For some reason the Arduino would always respond with ['$', '0', 'step', '100!', '0', 'step', '100'] so I've added these two lines to fix that
+                    resp = [resp[0], resp[1], resp[2], resp[3][:-1]]
+                if len(resp) != 4:
+                    print("Received erroneous message '{}'; Not of length 4".format(resp))
                 else:
-                    print("<-- " + " ".join(response))
-                    response = Message(response[0], response[1], response[2], response[3])
-                    self.filter_response(response)
+                    print("<-- " + " ".join(resp))
+                    resp = Message(resp[0], resp[1], resp[2], resp[3])
+                    self.filter_response(resp)
         return
 
     def get_exit_flag(self):
